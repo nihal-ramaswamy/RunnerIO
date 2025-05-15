@@ -28,16 +28,18 @@ services:
     ports:
       - '6379:6379'
   mongo_db:
+    container_name: mongo_db
     image: 'mongo'
     env_file:
       - ./.env
     ports:
       - "27017:27017"
   mongo_express:
+    container_name: mongo_express
     image: mongo-express
     restart: always
     ports:
-      - "8081:8081"
+      - "8081:8082"
     env_file:
       - ./.env
 volumes:  
