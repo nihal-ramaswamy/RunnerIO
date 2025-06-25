@@ -2,6 +2,7 @@ package fx_utils
 
 import (
 	"context"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,16 @@ func newServerEngine(
 	gin.SetMode(config.GinMode)
 
 	server := gin.Default()
-	server.Use(cors.New(config.Cors))
+
+	cfg := cors.DefaultConfig()
+	cfg.AllowAllOrigins = true
+	cfg.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
+	cfg.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma"}
+	cfg.ExposeHeaders = []string{"Content-Length"}
+	cfg.AllowCredentials = true
+	cfg.MaxAge = 12 * time.Hour
+
+	server.Use(cors.New(cfg))
 	server.Use(log_middleware.DefaultStructuredLogger(log))
 	server.Use(gin.Recovery())
 

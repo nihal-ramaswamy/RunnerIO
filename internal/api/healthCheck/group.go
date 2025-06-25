@@ -11,6 +11,8 @@ import (
 type HealthCheckGroup struct {
 	routeHandlers []interfaces.HandlerInterface
 	middlewares   []gin.HandlerFunc
+
+	interfaces.ServerGroupInterface
 }
 
 func (*HealthCheckGroup) Group() string {
@@ -24,6 +26,7 @@ func (h *HealthCheckGroup) RouteHandlers() []interfaces.HandlerInterface {
 func NewHealthCheckGroup(ctx context.Context, log *zap.Logger) *HealthCheckGroup {
 	handlers := []interfaces.HandlerInterface{
 		NewHealthCheckHandler(ctx, log),
+		NewAuthHealthCheckHandler(ctx, log),
 	}
 
 	return &HealthCheckGroup{

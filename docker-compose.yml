@@ -7,7 +7,6 @@ services:
       - "8080:8080"
     depends_on:
       - go_db
-      - cache_db
       - mongo_db
       - mongo_express
   go_db:
@@ -20,13 +19,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/go_runner.sql
-  cache_db:
-    container_name: cache_db
-    image: redis:alpine
-    env_file:
-      - ./.env
-    ports:
-      - '6379:6379'
   mongo_db:
     container_name: mongo_db
     image: 'mongo'

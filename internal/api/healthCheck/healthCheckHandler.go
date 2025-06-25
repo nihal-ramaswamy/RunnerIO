@@ -5,11 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"go.uber.org/zap"
 )
 
 type HealthCheckHandler struct {
 	middlewares []gin.HandlerFunc
+
+	interfaces.HandlerInterface
 }
 
 func NewHealthCheckHandler(ctx context.Context, log *zap.Logger) *HealthCheckHandler {

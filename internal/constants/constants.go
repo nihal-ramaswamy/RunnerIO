@@ -26,6 +26,10 @@ const (
 	// UUID generation
 	UUID_CHARACTERS = "qwertyuiopasdfghjklzxcvbnm"
 	UUID_LENGTH     = 9
+
+	AUTH0_CLIENT_ID    = "AUTH0_CLIENT_ID"
+	AUTH0_CLIENT_SEC   = "AUTH0_CLIENT_SEC"
+	AUTH0_CALLBACK_URL = "AUTH0_CALLBACK_URL"
 )
 
 func GetRuneUuidCharacters() []rune {
