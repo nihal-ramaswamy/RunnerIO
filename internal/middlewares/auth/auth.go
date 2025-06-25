@@ -1,9 +1,8 @@
 package auth_middleware
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -47,147 +46,131 @@ func AuthMiddleware(log *zap.Logger) gin.HandlerFunc {
 }
 
 func ValidatePermissions(log *zap.Logger, expectedClaims []string) gin.HandlerFunc {
-	mgmtClientId := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_ID")
-	mgmtClientSecret := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_SECRET")
-	mgmtAudience := utils.GetDotEnvVariable("MGMT_AUTH0_AUDIENCE")
-	mgmtTokenUrl := utils.GetDotEnvVariable("MGMT_AUTH0_TOKEN_URL")
-	mgmtPermissionUrl := utils.GetDotEnvVariable("MGMT_AUTH0_PERMISSIONS")
-
 	return func(c *gin.Context) {
-		userDataStr := c.GetHeader("userData")
+		userPermissions := c.GetHeader("userPermissions")
+		var userPermissionsDto []dto.UserPermission
 
-		var userData dto.UserData
-		if err := json.Unmarshal([]byte(userDataStr), &userData); err != nil {
-			log.Error("Failed to unmarshal the user data", zap.Error(err))
+		if err := json.Unmarshal([]byte(userPermissions), &userPermissionsDto); err != nil {
+			log.Error("Failed to unmarshal the user permissions", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
+			return
 		}
 
-		client := &http.Client{}
-		method := http.MethodPost
-		mgmtBody := dto.NewMgmtPostRequest(mgmtClientId, mgmtClientSecret, mgmtAudience)
-		bbody, err := json.Marshal(mgmtBody)
-		if err != nil {
-			log.Fatal("Failed to marshal the body", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
+		foundPermission := make([]bool, len(expectedClaims))
+		for i := range expectedClaims {
+			foundPermission[i] = false
 		}
 
-		req, err := http.NewRequest(method, mgmtTokenUrl, bytes.NewBuffer(bbody))
-		req.Header.Add("Content-Type", "application/json")
-		res, err := client.Do(req)
-
-		if err != nil {
-			log.Fatal("Failed to make the request", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
-		}
-		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal("Failed to read the response body", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
-		}
-		log.Info("body", zap.String("body", string(body)))
-
-		var mgmtPostResponse dto.MgmtPostResponse
-		if err := json.Unmarshal([]byte(string(body)), &mgmtPostResponse); err != nil {
-			log.Error("Failed to unmarshal the user data", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
+		for _, permission := range userPermissionsDto {
+			for i := range expectedClaims {
+				if permission.PermissionName == expectedClaims[i] {
+					foundPermission[i] = true
+				}
+			}
 		}
 
-		sub := userData.Sub
-		access_token := mgmtPostResponse.AccessToken
-		mgmtPermissionUrl, err = url.JoinPath(mgmtPermissionUrl, sub, "/permissions")
+		ok := true
 
-		if err != nil {
-			log.Fatal("Failed to join the user info url", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
+		for _, permission := range foundPermission {
+			if !permission {
+				ok = false
+				break
+			}
 		}
 
-		log.Info("permissions url", zap.String("url", mgmtPermissionUrl))
-
-		client = &http.Client{}
-		method = http.MethodGet
-
-		req, err = http.NewRequest(method, mgmtPermissionUrl, nil)
-
-		if err != nil {
-			log.Fatal("Failed to create the request", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
+		if !ok {
+			log.Error("User does not have the required permissions", zap.Any("expectedClaims", expectedClaims))
+			c.AbortWithError(http.StatusUnauthorized, errors.New("User does not have the required permissions"))
+			return
 		}
-
-		req.Header.Add("Accept", "application/json")
-		req.Header.Add("authorization", "Bearer "+access_token)
-		res, err = client.Do(req)
-
-		if err != nil {
-			log.Fatal("Failed to make the request", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
-		}
-		defer res.Body.Close()
-
-		body, err = io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal("Failed to read the response body", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
-		}
-
-		log.Info("body", zap.Any("body", string(body)))
 
 		c.Next()
 	}
 }
 
 func UserInfoMiddleware(log *zap.Logger) gin.HandlerFunc {
+	mgmtAudience := utils.GetDotEnvVariable("MGMT_AUTH0_AUDIENCE")
+	mgmtClientId := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_ID")
+	mgmtClientSecret := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_SECRET")
+	authority := utils.GetDotEnvVariable("AUTH0_AUTHORITY")
+
 	return func(c *gin.Context) {
+
+		mgmtAudienceApi, err := url.JoinPath(mgmtAudience, "/api/v2/")
+		if err != nil {
+			log.Fatal("Failed to join the mgmt audience api", zap.Error(err))
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		mgmtTokenUrl, err := url.JoinPath(mgmtAudience, "/oauth/token")
+		if err != nil {
+			log.Fatal("Failed to join the mgmt token url", zap.Error(err))
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		mgmtPermissionUrl, err := url.JoinPath(mgmtAudience, "/api/v2/users/")
+		if err != nil {
+			log.Fatal("Failed to join the mgmt permission url", zap.Error(err))
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
 		r := c.Request
 		token, err := jwtmiddleware.AuthHeaderTokenExtractor(r)
 		if err != nil {
 			log.Fatal("Failed to extract the token", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
 		}
-		log.Info("token", zap.String("token", token))
 
-		authority := utils.GetDotEnvVariable("AUTH0_AUTHORITY")
-
+		// Fetch the user info
 		issuerURL, err := url.Parse(authority)
 		if err != nil {
 			log.Fatal("Failed to parse the issuer url", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
 		}
 
-		userInfoUrl, err := url.JoinPath(issuerURL.String(), "/userinfo")
+		userData, err := utils.GetUserInfo(issuerURL, token, log)
+		if err != nil {
+			log.Fatal("Failed to get the user info", zap.Error(err))
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		userDataMarshal, err := json.Marshal(userData)
+		if err != nil {
+			log.Fatal("Failed to marshal the user data", zap.Error(err))
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		// Fetch the user permissions
+		mgmtPostResponse, err := utils.GetMgmtPostResponse(mgmtClientId, mgmtClientSecret, mgmtAudienceApi, mgmtTokenUrl, log)
+		sub := userData.Sub
+		access_token := mgmtPostResponse.AccessToken
+		mgmtPermissionUrl, err = url.JoinPath(mgmtPermissionUrl, sub, "/permissions")
 		if err != nil {
 			log.Fatal("Failed to join the user info url", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
 		}
 
-		client := &http.Client{}
-		method := http.MethodGet
-
-		req, err := http.NewRequest(method, userInfoUrl, nil)
-
+		userPermissions, err := utils.GetUserPermissions(mgmtPermissionUrl, mgmtTokenUrl, mgmtClientId, mgmtClientSecret, mgmtAudienceApi, access_token, log)
 		if err != nil {
-			log.Fatal("Failed to create the request", zap.Error(err))
+			log.Fatal("Failed to get the user permissions", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
+			return
 		}
 
-		req.Header.Add("Accept", "application/json")
-		req.Header.Add("authorization", "Bearer "+token)
-		res, err := client.Do(req)
-
+		userPermissionsMarshal, err := json.Marshal(userPermissions)
 		if err != nil {
-			log.Fatal("Failed to make the request", zap.Error(err))
+			log.Fatal("Failed to marshal the user permissions", zap.Error(err))
 			c.AbortWithError(http.StatusInternalServerError, err)
-		}
-		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal("Failed to read the response body", zap.Error(err))
-			c.AbortWithError(http.StatusInternalServerError, err)
+			return
 		}
 
-		c.Request.Header.Add("userData", string(body))
+		c.Request.Header.Add("userData", string(userDataMarshal))
+		c.Request.Header.Add("userPermissions", string(userPermissionsMarshal))
 		c.Next()
 	}
 }

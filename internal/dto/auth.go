@@ -22,6 +22,20 @@ type MgmtPostResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
+type sources struct {
+	SourceId   string `json:"source_id"`
+	SourceName string `json:"source_name"`
+	SourceType string `json:"source_type"`
+}
+
+type UserPermission struct {
+	PermissionName     string    `json:"permission_name"`
+	Description        string    `json:"description"`
+	ResourceServerName string    `json:"resource_server_name"`
+	ResourceServerID   string    `json:"resource_server_identifier"`
+	Sources            []sources `json:"sources"`
+}
+
 func NewMgmtPostRequest(clientId, clientSecret, audience string) *MgmtPostRequest {
 	return &MgmtPostRequest{
 		ClientID:     clientId,
