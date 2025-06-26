@@ -3,9 +3,6 @@ package constants
 import "time"
 
 const (
-	// Timme for tooke to expire
-	TOKEN_EXPIRY_TIME = time.Hour * 24 * 7 // 7 days
-
 	POSTGRES_HOST     = "POSTGRES_HOST"
 	POSTGRES_PORT     = "POSTGRES_PORT"
 	POSTGRES_USER     = "POSTGRES_USER"
@@ -30,6 +27,8 @@ const (
 	AUTH0_CLIENT_ID    = "AUTH0_CLIENT_ID"
 	AUTH0_CLIENT_SEC   = "AUTH0_CLIENT_SEC"
 	AUTH0_CALLBACK_URL = "AUTH0_CALLBACK_URL"
+
+	TOKEN_EXPIRY_TIME = 23 * time.Hour
 )
 
 func GetRuneUuidCharacters() []rune {

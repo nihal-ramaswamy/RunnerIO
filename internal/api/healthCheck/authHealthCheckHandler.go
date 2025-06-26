@@ -24,7 +24,7 @@ func NewAuthHealthCheckHandler(ctx context.Context, log *zap.Logger) *AuthHealth
 		log: log,
 		middlewares: []gin.HandlerFunc{
 			auth_middleware.AuthMiddleware(log),
-			auth_middleware.UserInfoMiddleware(log),
+			auth_middleware.UserInfoMiddleware(ctx, log),
 			auth_middleware.ValidatePermissions(log, []string{"read:all"}),
 		},
 	}

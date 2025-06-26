@@ -1,6 +1,7 @@
 package auth_middleware
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -88,7 +89,9 @@ func ValidatePermissions(log *zap.Logger, expectedClaims []string) gin.HandlerFu
 	}
 }
 
-func UserInfoMiddleware(log *zap.Logger) gin.HandlerFunc {
+func UserInfoMiddleware(
+	ctx context.Context,
+	log *zap.Logger) gin.HandlerFunc {
 	mgmtAudience := utils.GetDotEnvVariable("MGMT_AUTH0_AUDIENCE")
 	mgmtClientId := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_ID")
 	mgmtClientSecret := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_SECRET")
@@ -146,9 +149,10 @@ func UserInfoMiddleware(log *zap.Logger) gin.HandlerFunc {
 		}
 
 		// Fetch the user permissions
+		access_token := ""
 		mgmtPostResponse, err := utils.GetMgmtPostResponse(mgmtClientId, mgmtClientSecret, mgmtAudienceApi, mgmtTokenUrl, log)
 		sub := userData.Sub
-		access_token := mgmtPostResponse.AccessToken
+		access_token = mgmtPostResponse.AccessToken
 		mgmtPermissionUrl, err = url.JoinPath(mgmtPermissionUrl, sub, "/permissions")
 		if err != nil {
 			log.Fatal("Failed to join the user info url", zap.Error(err))

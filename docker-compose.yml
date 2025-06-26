@@ -9,6 +9,7 @@ services:
       - go_db
       - mongo_db
       - mongo_express
+      - runner_redis
   go_db:
     container_name: go_db
     image: postgres:16
@@ -21,7 +22,7 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/go_runner.sql
   mongo_db:
     container_name: mongo_db
-    image: 'mongo'
+    image: "mongo"
     env_file:
       - ./.env
     ports:
@@ -34,5 +35,10 @@ services:
       - "8081:8082"
     env_file:
       - ./.env
-volumes:  
+  runner_redis:
+    container_name: runner_redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+volumes:
   pgdata: {}

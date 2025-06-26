@@ -23,7 +23,9 @@ func (h *HealthCheckGroup) RouteHandlers() []interfaces.HandlerInterface {
 	return h.routeHandlers
 }
 
-func NewHealthCheckGroup(ctx context.Context, log *zap.Logger) *HealthCheckGroup {
+func NewHealthCheckGroup(
+	ctx context.Context,
+	log *zap.Logger) *HealthCheckGroup {
 	handlers := []interfaces.HandlerInterface{
 		NewHealthCheckHandler(ctx, log),
 		NewAuthHealthCheckHandler(ctx, log),

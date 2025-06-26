@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	healthcheck_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/healthCheck"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -14,6 +15,7 @@ func NewRoutes(
 	server *gin.Engine,
 	log *zap.Logger,
 	ctx context.Context,
+	redisClient *redis.Client,
 ) {
 	serverGroupHandlers := []interfaces.ServerGroupInterface{
 		healthcheck_api.NewHealthCheckGroup(ctx, log),
