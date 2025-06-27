@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -25,10 +26,11 @@ func (h *HealthCheckGroup) RouteHandlers() []interfaces.HandlerInterface {
 
 func NewHealthCheckGroup(
 	ctx context.Context,
+	redisClient *redis.Client,
 	log *zap.Logger) *HealthCheckGroup {
 	handlers := []interfaces.HandlerInterface{
 		NewHealthCheckHandler(ctx, log),
-		NewAuthHealthCheckHandler(ctx, log),
+		NewAuthHealthCheckHandler(ctx, redisClient, log),
 	}
 
 	return &HealthCheckGroup{

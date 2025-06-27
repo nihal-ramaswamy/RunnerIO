@@ -9,6 +9,7 @@ import (
 	"github.com/nihal-ramaswamy/RunnerIO/internal/dto"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	auth_middleware "github.com/nihal-ramaswamy/RunnerIO/internal/middlewares/auth"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -19,12 +20,12 @@ type AuthHealthCheckHandler struct {
 	interfaces.HandlerInterface
 }
 
-func NewAuthHealthCheckHandler(ctx context.Context, log *zap.Logger) *AuthHealthCheckHandler {
+func NewAuthHealthCheckHandler(ctx context.Context, redisClient *redis.Client, log *zap.Logger) *AuthHealthCheckHandler {
 	return &AuthHealthCheckHandler{
 		log: log,
 		middlewares: []gin.HandlerFunc{
 			auth_middleware.AuthMiddleware(log),
-			auth_middleware.UserInfoMiddleware(ctx, log),
+			auth_middleware.UserInfoMiddleware(ctx, redisClient, log),
 			auth_middleware.ValidatePermissions(log, []string{"read:all"}),
 		},
 	}

@@ -18,7 +18,7 @@ func NewRoutes(
 	redisClient *redis.Client,
 ) {
 	serverGroupHandlers := []interfaces.ServerGroupInterface{
-		healthcheck_api.NewHealthCheckGroup(ctx, log),
+		healthcheck_api.NewHealthCheckGroup(ctx, redisClient, log),
 	}
 
 	for _, serverGroupHandler := range serverGroupHandlers {

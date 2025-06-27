@@ -13,8 +13,10 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	adapter "github.com/gwatts/gin-adapter"
+	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/dto"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -91,6 +93,7 @@ func ValidatePermissions(log *zap.Logger, expectedClaims []string) gin.HandlerFu
 
 func UserInfoMiddleware(
 	ctx context.Context,
+	redisClient *redis.Client,
 	log *zap.Logger) gin.HandlerFunc {
 	mgmtAudience := utils.GetDotEnvVariable("MGMT_AUTH0_AUDIENCE")
 	mgmtClientId := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_ID")
@@ -150,9 +153,25 @@ func UserInfoMiddleware(
 
 		// Fetch the user permissions
 		access_token := ""
-		mgmtPostResponse, err := utils.GetMgmtPostResponse(mgmtClientId, mgmtClientSecret, mgmtAudienceApi, mgmtTokenUrl, log)
+
+		cachedToken, err := redisClient.Get(ctx, "mgmtAccessToken").Result()
+
+		if err == nil {
+			access_token = cachedToken
+			log.Info("Reading from cache")
+		} else {
+			log.Info("Calling auth0 to fetch mgmt access token")
+			mgmtPostResponse, err := utils.GetMgmtPostResponse(mgmtClientId, mgmtClientSecret, mgmtAudienceApi, mgmtTokenUrl, log)
+			if err != nil {
+				log.Fatal("Failed to get the mgmt post response", zap.Error(err))
+				c.AbortWithError(http.StatusInternalServerError, err)
+				return
+			}
+			access_token = mgmtPostResponse.AccessToken
+			redisClient.Set(ctx, "mgmtAccessToken", access_token, constants.TOKEN_EXPIRY_TIME)
+		}
+
 		sub := userData.Sub
-		access_token = mgmtPostResponse.AccessToken
 		mgmtPermissionUrl, err = url.JoinPath(mgmtPermissionUrl, sub, "/permissions")
 		if err != nil {
 			log.Fatal("Failed to join the user info url", zap.Error(err))
