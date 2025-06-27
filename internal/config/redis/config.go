@@ -2,7 +2,6 @@ package redisconfig
 
 import (
 	"context"
-	"time"
 
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
@@ -19,7 +18,7 @@ type RedisConfig struct {
 }
 
 // NewRedisClient creates and initializes a new Redis client.
-func NewRedisClient(ctx context.Context, log *zap.Logger, config RedisConfig) *redis.Client {
+func NewRedisClient(ctx context.Context, log *zap.Logger, config *RedisConfig) *redis.Client {
 	redisAddr := config.Host + ":" + config.Port
 	client := redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
@@ -36,18 +35,27 @@ func NewRedisClient(ctx context.Context, log *zap.Logger, config RedisConfig) *r
 }
 
 // DefaultRedisConfig provides default Redis configuration.  It uses environment variables for flexibility.
-func DefaultRedisConfig() RedisConfig {
-	return RedisConfig{
+func NewRedisConfig(options ...func(*RedisConfig)) *RedisConfig {
+	config := &RedisConfig{
 		Host:     utils.GetDotEnvVariable(constants.REDIS_HOST),
 		Port:     utils.GetDotEnvVariable(constants.REDIS_PORT),
 		Password: utils.GetDotEnvVariable(constants.REDIS_PASSWORD),
-		DB:       1,
+		DB:       0,
+	}
+
+	for _, option := range options {
+		option(config)
+	}
+
+	return config
+}
+
+func WithRedisDB(db int) func(*RedisConfig) {
+	return func(c *RedisConfig) {
+		c.DB = db
 	}
 }
 
-// WithRedisConnectionTimeout sets a connection timeout for the Redis client.
-func WithRedisConnectionTimeout(timeout time.Duration) func(*redis.Options) {
-	return func(opts *redis.Options) {
-		opts.DialTimeout = timeout
-	}
+func DefaultRedisConfigForAuth() *RedisConfig {
+	return NewRedisConfig(WithRedisDB(0))
 }

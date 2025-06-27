@@ -9,5 +9,5 @@ import (
 var ConfigModule = fx.Module(
 	"Config",
 	fx.Provide(serverconfig.Default),
-	fx.Provide(redisconfig.DefaultRedisConfig),
+	fx.Provide(redisconfig.DefaultRedisConfigForAuth),
 )
