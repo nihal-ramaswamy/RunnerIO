@@ -7,7 +7,6 @@ services:
       - "8080:8080"
     depends_on:
       - go_db
-      - mongo_db
       - mongo_express
       - runner_redis
   go_db:
@@ -20,21 +19,26 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/go_runner.sql
-  mongo_db:
-    container_name: mongo_db
-    image: "mongo"
-    env_file:
-      - ./.env
-    ports:
-      - "27017:27017"
-  mongo_express:
-    container_name: mongo_express
-    image: mongo-express
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
     restart: always
     ports:
-      - "8081:8082"
+      - "27017:27017"
     env_file:
       - ./.env
+    volumes:
+      - mongodb_data:/data/db
+  mongo_express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./.env
+    depends_on:
+      - mongodb
   runner_redis:
     container_name: runner_redis
     image: redis:alpine
@@ -42,3 +46,4 @@ services:
       - "6379:6379"
 volumes:
   pgdata: {}
+  mongodb_data:
