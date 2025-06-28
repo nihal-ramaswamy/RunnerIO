@@ -3,6 +3,7 @@ package mongodbconfig
 import (
 	"context"
 
+	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -50,10 +51,10 @@ func WithPort(port string) func(*Config) {
 
 func DefaultConfig() *Config {
 	return NewConfig(
-		WithUserName(utils.GetDotEnvVariable("MONGO_INITDB_ROOT_USERNAME")),
-		WithPassword(utils.GetDotEnvVariable("MONGO_INITDB_ROOT_PASSWORD")),
-		WithHost(utils.GetDotEnvVariable("MONGO_HOST")),
-		WithPort(utils.GetDotEnvVariable("ME_CONFIG_MONGODB_PORT")),
+		WithUserName(utils.GetDotEnvVariable(constants.MONGO_INITDB_ROOT_USERNAME)),
+		WithPassword(utils.GetDotEnvVariable(constants.MONGO_INITDB_ROOT_PASSWORD)),
+		WithHost(utils.GetDotEnvVariable(constants.MONGO_HOST)),
+		WithPort(utils.GetDotEnvVariable(constants.ME_CONFIG_MONGODB_PORT)),
 	)
 }
 

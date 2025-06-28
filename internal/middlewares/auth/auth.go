@@ -21,8 +21,8 @@ import (
 )
 
 func AuthMiddleware(log *zap.Logger) gin.HandlerFunc {
-	audience := utils.GetDotEnvVariable("AUTH0_AUDIENCE")
-	authority := utils.GetDotEnvVariable("AUTH0_AUTHORITY")
+	audience := utils.GetDotEnvVariable(constants.AUTH0_AUDIENCE)
+	authority := utils.GetDotEnvVariable(constants.AUTH0_AUTHORITY)
 
 	issuerURL, err := url.Parse(authority)
 	if err != nil {
@@ -95,10 +95,10 @@ func UserInfoMiddleware(
 	ctx context.Context,
 	redisClient *redis.Client,
 	log *zap.Logger) gin.HandlerFunc {
-	mgmtAudience := utils.GetDotEnvVariable("MGMT_AUTH0_AUDIENCE")
-	mgmtClientId := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_ID")
-	mgmtClientSecret := utils.GetDotEnvVariable("MGMT_AUTH0_CLIENT_SECRET")
-	authority := utils.GetDotEnvVariable("AUTH0_AUTHORITY")
+	mgmtAudience := utils.GetDotEnvVariable(constants.MGMT_AUTH0_AUDIENCE)
+	mgmtClientId := utils.GetDotEnvVariable(constants.MGMT_AUTH0_CLIENT_ID)
+	mgmtClientSecret := utils.GetDotEnvVariable(constants.MGMT_AUTH0_CLIENT_SECRET)
+	authority := utils.GetDotEnvVariable(constants.AUTH0_AUTHORITY)
 
 	return func(c *gin.Context) {
 
@@ -154,7 +154,7 @@ func UserInfoMiddleware(
 		// Fetch the user permissions
 		access_token := ""
 
-		cachedToken, err := redisClient.Get(ctx, "mgmtAccessToken").Result()
+		cachedToken, err := redisClient.Get(ctx, constants.MGMT_ACCESS_TOKEN).Result()
 
 		if err == nil {
 			access_token = cachedToken
@@ -168,7 +168,7 @@ func UserInfoMiddleware(
 				return
 			}
 			access_token = mgmtPostResponse.AccessToken
-			redisClient.Set(ctx, "mgmtAccessToken", access_token, constants.TOKEN_EXPIRY_TIME)
+			redisClient.Set(ctx, constants.MGMT_ACCESS_TOKEN, access_token, constants.TOKEN_EXPIRY_TIME)
 		}
 
 		sub := userData.Sub
