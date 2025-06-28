@@ -10,6 +10,7 @@ import (
 	serverconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/server"
 	log_middleware "github.com/nihal-ramaswamy/RunnerIO/internal/middlewares/log"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -20,6 +21,7 @@ func newServerEngine(
 	log *zap.Logger,
 	ctx context.Context,
 	redisClient *redis.Client,
+	mongoClient *mongo.Client,
 ) *gin.Engine {
 	gin.SetMode(config.GinMode)
 
@@ -37,7 +39,7 @@ func newServerEngine(
 	server.Use(log_middleware.DefaultStructuredLogger(log))
 	server.Use(gin.Recovery())
 
-	api.NewRoutes(server, log, ctx, redisClient)
+	api.NewRoutes(server, log, ctx, redisClient, mongoClient)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

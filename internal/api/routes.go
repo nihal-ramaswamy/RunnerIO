@@ -8,6 +8,7 @@ import (
 	healthcheck_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/healthCheck"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
 
@@ -16,6 +17,7 @@ func NewRoutes(
 	log *zap.Logger,
 	ctx context.Context,
 	redisClient *redis.Client,
+	mongoClient *mongo.Client,
 ) {
 	serverGroupHandlers := []interfaces.ServerGroupInterface{
 		healthcheck_api.NewHealthCheckGroup(ctx, redisClient, log),
