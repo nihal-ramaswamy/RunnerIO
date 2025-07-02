@@ -24,6 +24,7 @@ func main() {
 
 		fx_utils.ConfigModule,
 		fx_utils.DBModule,
+		fx_utils.DTOModule,
 		fx_utils.MicroServicesModule,
 
 		fx.Invoke(Invoke),

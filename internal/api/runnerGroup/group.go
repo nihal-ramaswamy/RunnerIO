@@ -37,7 +37,6 @@ func NewRunnerGroup(
 	handlers := []interfaces.HandlerInterface{
 		NewCreateRunnerGroupHandler(ctx, mongoClient, log),
 		NewJoinRunnerGroupHandler(ctx, mongoClient, log),
-		NewPutOnQueueGroupHandler(ampqconfig, log),
 	}
 
 	return &RunnerGroup{

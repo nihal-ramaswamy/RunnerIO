@@ -5,9 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	healthcheck_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/healthCheck"
-	runner_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/runner"
+	runner_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/runnerGroup"
+	runner_ws "github.com/nihal-ramaswamy/RunnerIO/internal/api/runnerWsGroup"
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
+	wsdto "github.com/nihal-ramaswamy/RunnerIO/internal/dto/ws"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,10 +24,13 @@ func NewRoutes(
 	redisClient *redis.Client,
 	mongoClient *mongo.Client,
 	ampqconfig *amqpconfig.AmqpConfig,
+	websocket *websocket.Upgrader,
+	persistAuditDataClientsMap *wsdto.PersistAuditDataManagerMap,
 ) {
 	serverGroupHandlers := []interfaces.ServerGroupInterface{
 		healthcheck_api.NewHealthCheckGroup(ctx, redisClient, log),
 		runner_api.NewRunnerGroup(ctx, redisClient, log, mongoClient, ampqconfig),
+		runner_ws.NewRunnerWsGroup(ctx, redisClient, websocket, persistAuditDataClientsMap, log, ampqconfig),
 	}
 
 	for _, serverGroupHandler := range serverGroupHandlers {

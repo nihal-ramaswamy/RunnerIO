@@ -6,9 +6,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/api"
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	serverconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/server"
+	wsdto "github.com/nihal-ramaswamy/RunnerIO/internal/dto/ws"
 	log_middleware "github.com/nihal-ramaswamy/RunnerIO/internal/middlewares/log"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,6 +26,8 @@ func newServerEngine(
 	redisClient *redis.Client,
 	mongoClient *mongo.Client,
 	ampqConfig *amqpconfig.AmqpConfig,
+	websocket *websocket.Upgrader,
+	persistAuditDataClientsMap *wsdto.PersistAuditDataManagerMap,
 ) *gin.Engine {
 	gin.SetMode(config.GinMode)
 
@@ -41,7 +45,7 @@ func newServerEngine(
 	server.Use(log_middleware.DefaultStructuredLogger(log))
 	server.Use(gin.Recovery())
 
-	api.NewRoutes(server, log, ctx, redisClient, mongoClient, ampqConfig)
+	api.NewRoutes(server, log, ctx, redisClient, mongoClient, ampqConfig, websocket, persistAuditDataClientsMap)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
