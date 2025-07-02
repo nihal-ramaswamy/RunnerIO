@@ -9,6 +9,7 @@ services:
       - go_db
       - mongo_express
       - runner_redis
+      - amqp
   go_db:
     container_name: go_db
     image: postgres:16
@@ -44,6 +45,12 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+  amqp:
+    container_name: rabbitmq_runner
+    image: rabbitmq:4.1.1-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 volumes:
   pgdata: {}
   mongodb_data:

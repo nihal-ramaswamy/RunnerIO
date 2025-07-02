@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/api"
+	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	serverconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/server"
 	log_middleware "github.com/nihal-ramaswamy/RunnerIO/internal/middlewares/log"
 	"github.com/redis/go-redis/v9"
@@ -22,6 +23,7 @@ func newServerEngine(
 	ctx context.Context,
 	redisClient *redis.Client,
 	mongoClient *mongo.Client,
+	ampqConfig *amqpconfig.AmqpConfig,
 ) *gin.Engine {
 	gin.SetMode(config.GinMode)
 
@@ -39,7 +41,7 @@ func newServerEngine(
 	server.Use(log_middleware.DefaultStructuredLogger(log))
 	server.Use(gin.Recovery())
 
-	api.NewRoutes(server, log, ctx, redisClient, mongoClient)
+	api.NewRoutes(server, log, ctx, redisClient, mongoClient, ampqConfig)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
