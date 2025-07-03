@@ -40,3 +40,9 @@ func (m *PersistAuditDataManagerMap) Get(key string) (*PersistAuditDataClient, b
 	client, ok := m.Map[key]
 	return client, ok
 }
+
+func (m *PersistAuditDataManagerMap) RemoveClient(client *PersistAuditDataClient) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.Map, client.Sub)
+}

@@ -40,12 +40,15 @@ func PersistAuditData(
 				continue
 			}
 
-			res, err := mongoClient.Database(constants.RUNNER_DATABASE).Collection(constants.RUNNER_AUDIT_COLLECTION).InsertOne(ctx, data)
-			if err != nil {
-				log.Error("Failed to insert document", zap.Error(err))
-				continue
-			}
-			log.Info("Inserted document", zap.Any("id", res.InsertedID))
+			go func() {
+				res, err := mongoClient.Database(constants.RUNNER_DATABASE).Collection(constants.RUNNER_AUDIT_COLLECTION).InsertOne(ctx, data)
+				if err != nil {
+					log.Error("Failed to insert document", zap.Error(err))
+					return
+				}
+				log.Info("Inserted document", zap.Any("id", res.InsertedID))
+			}()
+
 		}
 	}()
 

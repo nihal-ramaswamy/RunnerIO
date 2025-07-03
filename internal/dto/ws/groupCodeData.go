@@ -40,3 +40,24 @@ func (m *GroupCodeDataClientManagerMap) Get(key string) ([]*GroupCodeDataClient,
 	client, ok := m.Map[key]
 	return client, ok
 }
+
+func (m *GroupCodeDataClientManagerMap) RemoveClient(key string, clientToRemove *GroupCodeDataClient) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	clients, ok := m.Map[key]
+	if !ok {
+		return
+	}
+
+	for i, client := range clients {
+		if client == clientToRemove {
+			m.Map[key] = append(clients[:i], clients[i+1:]...)
+			break
+		}
+	}
+
+	if len(m.Map[key]) == 0 {
+		delete(m.Map, key)
+	}
+}

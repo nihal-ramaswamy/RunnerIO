@@ -55,29 +55,32 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 		utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 			"Failed to unmarshal user data", zap.Error(err))
 
-		h.groupCodeDataClientManagerMap.Add(groupCode, &wsdto.GroupCodeDataClient{
+		client := &wsdto.GroupCodeDataClient{
 			Conn: ws,
 			Sub:  userData.Sub,
-		})
+		}
+		h.groupCodeDataClientManagerMap.Add(groupCode, client)
+		defer func() {
+			h.groupCodeDataClientManagerMap.RemoveClient(groupCode, client)
+			ws.Close()
+		}()
 
-		for {
-			msgs, err := h.amqpConfig.Channel.Consume(
-				groupCode, // queue
-				"",        // consumer
-				false,     // auto-ack
-				false,     // exclusive
-				false,     // no-local
-				false,     // no-wait
-				nil,       // args
-			)
-			if err != nil {
-				h.log.Fatal("Failed to register a consumer: %s", zap.Error(err))
-				return
-			}
+		go func() {
+			for {
+				msgs, err := h.amqpConfig.Channel.Consume(
+					groupCode, // queue
+					"",        // consumer
+					false,     // auto-ack
+					false,     // exclusive
+					false,     // no-local
+					false,     // no-wait
+					nil,       // args
+				)
+				if err != nil {
+					h.log.Error("Failed to register a consumer", zap.Error(err))
+					return
+				}
 
-			var forever chan struct{}
-
-			go func() {
 				for d := range msgs {
 					h.log.Info("Received a message", zap.String("message", string(d.Body)))
 					clients, ok := h.groupCodeDataClientManagerMap.Get(groupCode)
@@ -89,16 +92,20 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 						err := client.Conn.WriteMessage(websocket.TextMessage, d.Body)
 						if err != nil {
 							h.log.Error("Failed to write message", zap.Error(err))
-							return
+							h.groupCodeDataClientManagerMap.RemoveClient(groupCode, client)
+							client.Conn.Close()
 						}
 					}
-
 				}
-			}()
-			<-forever
+			}
+		}()
 
+		for {
+			if _, _, err := ws.ReadMessage(); err != nil {
+				h.log.Info("Client disconnected", zap.String("groupCode", groupCode), zap.String("sub", userData.Sub))
+				break
+			}
 		}
-
 	}
 }
 

@@ -59,21 +59,23 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 		utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 			"Failed to unmarshal user data", zap.Error(err))
 
-		h.persistAuditDataClientsMap.Add(userData.Sub, &wsdto.PersistAuditDataClient{
+		client := &wsdto.PersistAuditDataClient{
 			Conn: ws,
 			Sub:  userData.Sub,
-		})
+		}
+		h.persistAuditDataClientsMap.Add(userData.Sub, client)
+		defer func() {
+			h.persistAuditDataClientsMap.RemoveClient(client)
+			ws.Close()
+		}()
 
 		for {
 			_, message, err := ws.ReadMessage()
 			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway,
-					websocket.CloseAbnormalClosure) {
-					h.log.Error("Unexpected close error", zap.Error(err))
-					break
-				}
-				h.log.Error("Failed to read message", zap.Error(err))
+				h.log.Info("Client disconnected", zap.String("sub", userData.Sub))
+				break
 			}
+			h.log.Info("Read message", zap.String("message", string(message)))
 
 			err = json.Unmarshal(message, &requestData)
 			utils.FailIfError(err, c, h.log, http.StatusBadRequest,
@@ -99,12 +101,6 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 				"Failed to publish message to RabbitMQ",
 				zap.Error(err), zap.String("queue", constants.AUDIT_QUEUE_NAME))
 
-			// Publish the message to :group_code queue
-			err = h.amqpConfig.PublishWithContext(jsonData, requestData.GroupCode, true)
-			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
-				"Failed to publish message to RabbitMQ",
-				zap.Error(err), zap.String("queue", requestData.GroupCode))
-
 			client, ok := h.persistAuditDataClientsMap.Get(userData.Sub)
 			if !ok {
 				h.log.Error("Client not found", zap.String("sub", userData.Sub))
@@ -118,12 +114,18 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 				"Failed to marshal response data", zap.Error(err))
 
-			client.Conn.WriteMessage(websocket.TextMessage, resp)
+			err = client.Conn.WriteMessage(websocket.TextMessage, resp)
+			if err != nil {
+				h.log.Error("Failed to write message", zap.Error(err))
+				h.persistAuditDataClientsMap.RemoveClient(client)
+				client.Conn.Close()
+			}
 
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Points added to queue successfully",
 			})
 		}
+
 	}
 }
 
