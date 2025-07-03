@@ -28,6 +28,7 @@ func newServerEngine(
 	ampqConfig *amqpconfig.AmqpConfig,
 	websocket *websocket.Upgrader,
 	persistAuditDataClientsMap *wsdto.PersistAuditDataManagerMap,
+	groupCodeDataClientsMap *wsdto.GroupCodeDataClientManagerMap,
 ) *gin.Engine {
 	gin.SetMode(config.GinMode)
 
@@ -45,7 +46,8 @@ func newServerEngine(
 	server.Use(log_middleware.DefaultStructuredLogger(log))
 	server.Use(gin.Recovery())
 
-	api.NewRoutes(server, log, ctx, redisClient, mongoClient, ampqConfig, websocket, persistAuditDataClientsMap)
+	api.NewRoutes(server, log, ctx, redisClient, mongoClient,
+		ampqConfig, websocket, persistAuditDataClientsMap, groupCodeDataClientsMap)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

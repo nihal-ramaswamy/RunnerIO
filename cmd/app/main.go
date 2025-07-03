@@ -38,6 +38,8 @@ func Invoke(server *gin.Engine, config *serverconfig.Config, log *zap.Logger, ct
 			log.Error(err.Error())
 		}
 	}()
+
+	// TODO: This should be in a separate module
 	go func() {
 		log.Info("Starting Audit Consumer")
 		messages.PersistAuditData(ctx, amqpconfig, mongoClient, log)

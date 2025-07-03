@@ -8,4 +8,5 @@ import (
 var DTOModule = fx.Module(
 	"DTO",
 	fx.Provide(wsdto.NewPersistAuditDataManagerMap),
+	fx.Provide(wsdto.NewGroupCodeDataClientManagerMap),
 )

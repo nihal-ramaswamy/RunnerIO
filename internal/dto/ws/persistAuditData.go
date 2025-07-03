@@ -12,7 +12,7 @@ type PersistAuditDataClient struct {
 }
 
 type PersistAuditDataManagerMap struct {
-	Map map[string]*PersistAuditDataClient
+	Map map[string]*PersistAuditDataClient // sub -> client
 	mu  sync.Mutex
 }
 

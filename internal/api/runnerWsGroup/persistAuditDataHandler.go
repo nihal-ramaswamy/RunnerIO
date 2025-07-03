@@ -41,7 +41,7 @@ func NewPutOnQueueGroupHandler(
 }
 
 func (*PersistAuditDataGroupHandler) Pattern() string {
-	return "/ws/putOnQueueGroup/"
+	return "/putOnQueueGroup/"
 }
 
 func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
@@ -67,7 +67,8 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 		for {
 			_, message, err := ws.ReadMessage()
 			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway,
+					websocket.CloseAbnormalClosure) {
 					h.log.Error("Unexpected close error", zap.Error(err))
 					break
 				}
@@ -92,10 +93,17 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 				"Failed to marshal request data", zap.Error(err))
 
-			err = h.amqpConfig.PublishWithContext(jsonData, constants.AUDIT_QUEUE_NAME)
+			// Publish the message to audit queue
+			err = h.amqpConfig.PublishWithContext(jsonData, constants.AUDIT_QUEUE_NAME, false)
 			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 				"Failed to publish message to RabbitMQ",
 				zap.Error(err), zap.String("queue", constants.AUDIT_QUEUE_NAME))
+
+			// Publish the message to :group_code queue
+			err = h.amqpConfig.PublishWithContext(jsonData, requestData.GroupCode, true)
+			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
+				"Failed to publish message to RabbitMQ",
+				zap.Error(err), zap.String("queue", requestData.GroupCode))
 
 			client, ok := h.persistAuditDataClientsMap.Get(userData.Sub)
 			if !ok {

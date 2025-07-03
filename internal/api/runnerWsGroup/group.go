@@ -22,7 +22,7 @@ type RunnerWsGroup struct {
 }
 
 func (h *RunnerWsGroup) Group() string {
-	return "/runner"
+	return "/ws"
 }
 
 func (h *RunnerWsGroup) RouteHandlers() []interfaces.HandlerInterface {
@@ -34,10 +34,12 @@ func NewRunnerWsGroup(
 	redisClient *redis.Client,
 	upgrader *websocket.Upgrader,
 	persistAuditDataClientsMap *wsdto.PersistAuditDataManagerMap,
+	groupCodeDataClientManagerMap *wsdto.GroupCodeDataClientManagerMap,
 	log *zap.Logger,
 	ampqconfig *amqpconfig.AmqpConfig) *RunnerWsGroup {
 	handlers := []interfaces.HandlerInterface{
 		NewPutOnQueueGroupHandler(ampqconfig, log, upgrader, persistAuditDataClientsMap),
+		NewEatProcessorQueueHandler(ampqconfig, log, upgrader, groupCodeDataClientManagerMap),
 	}
 
 	return &RunnerWsGroup{

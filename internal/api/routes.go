@@ -26,11 +26,13 @@ func NewRoutes(
 	ampqconfig *amqpconfig.AmqpConfig,
 	websocket *websocket.Upgrader,
 	persistAuditDataClientsMap *wsdto.PersistAuditDataManagerMap,
+	groupCodeDataClientManagerMap *wsdto.GroupCodeDataClientManagerMap,
 ) {
 	serverGroupHandlers := []interfaces.ServerGroupInterface{
 		healthcheck_api.NewHealthCheckGroup(ctx, redisClient, log),
 		runner_api.NewRunnerGroup(ctx, redisClient, log, mongoClient, ampqconfig),
-		runner_ws.NewRunnerWsGroup(ctx, redisClient, websocket, persistAuditDataClientsMap, log, ampqconfig),
+		runner_ws.NewRunnerWsGroup(ctx, redisClient, websocket,
+			persistAuditDataClientsMap, groupCodeDataClientManagerMap, log, ampqconfig),
 	}
 
 	for _, serverGroupHandler := range serverGroupHandlers {
