@@ -181,11 +181,19 @@ func eatPolygon(polygon dtoschema.PolygonData, cleanedPolygon dtoschema.PolygonD
 	pointsInPolygon, lastPointBeforeDeletion := getPointsInPolygon(cleanedPolygon.Coords, polygon.Coords)
 	pointsInCleanedPolygon, _ := getPointsInPolygon(polygon.Coords, cleanedPolygon.Coords)
 
+	if pointsInCleanedPolygon == nil || pointsInPolygon == nil {
+		return polygon
+	}
+
 	// Remove points from polygon that are inside cleanedPolygon
 	for _, point := range pointsInCleanedPolygon {
 		polygon.Coords = slices.DeleteFunc(polygon.Coords, func(p dtoschema.CoordinateStruct) bool {
 			return point.X == p.X && point.Y == p.Y
 		})
+	}
+
+	if lastPointBeforeDeletion == nil {
+		return polygon
 	}
 
 	// Add points from cleanedPolygon to polygon. Insert it in sorted order. Sorted by distance from the last deleted point
@@ -222,11 +230,19 @@ func mergePolygons(polygon1 dtoschema.PolygonData, polygon2 dtoschema.PolygonDat
 	pointsInPolygon2, lastPointBeforeDeletionP1 := getPointsInPolygon(polygon1.Coords, polygon2.Coords)
 	pointsInPolygon1, _ := getPointsInPolygon(polygon2.Coords, polygon1.Coords)
 
+	if pointsInPolygon1 == nil || pointsInPolygon2 == nil {
+		return polygon1
+	}
+
 	// Remove points from polygon1 that are inside polygon2
 	for _, point := range pointsInPolygon2 {
 		polygon1.Coords = slices.DeleteFunc(polygon1.Coords, func(p dtoschema.CoordinateStruct) bool {
 			return point.X == p.X && point.Y == p.Y
 		})
+	}
+
+	if lastPointBeforeDeletionP1 == nil {
+		return polygon1
 	}
 
 	// Add points from polygon2 to polygon1. Insert it in sorted order. Sorted by distance from the last deleted point
@@ -251,7 +267,7 @@ func mergePolygons(polygon1 dtoschema.PolygonData, polygon2 dtoschema.PolygonDat
 }
 
 // Get points from P1 that are inside P2
-func getPointsInPolygon(P1 []dtoschema.CoordinateStruct, P2 []dtoschema.CoordinateStruct) ([]dtoschema.CoordinateStruct, dtoschema.CoordinateStruct) {
+func getPointsInPolygon(P1 []dtoschema.CoordinateStruct, P2 []dtoschema.CoordinateStruct) ([]dtoschema.CoordinateStruct, *dtoschema.CoordinateStruct) {
 	var pointsInPolygon []dtoschema.CoordinateStruct
 	pointsIdxInPolygon := []int{}
 
@@ -261,9 +277,33 @@ func getPointsInPolygon(P1 []dtoschema.CoordinateStruct, P2 []dtoschema.Coordina
 			pointsIdxInPolygon = append(pointsIdxInPolygon, idx)
 		}
 	}
-	
+
 	if len(pointsIdxInPolygon) == 0 {
+		return nil, nil
 	}
 
+	if len(pointsIdxInPolygon) == len(P1) {
+		return pointsInPolygon, nil
+	}
+
+	lastPointBeforeDeletion := &P1[(pointsIdxInPolygon[0]-1+len(P1))%len(P1)]
+
 	return pointsInPolygon, lastPointBeforeDeletion
+}
+
+func isPointInPolygon(point dtoschema.CoordinateStruct, polygon []dtoschema.CoordinateStruct) bool {
+	// ray-casting algorithm
+	var inside bool
+	for i, p := range polygon {
+		j := i + 1
+		if j == len(polygon) {
+			j = 0
+		}
+		pj := polygon[j]
+		if ((p.Y > point.Y) != (pj.Y > point.Y)) &&
+			(point.X < (pj.X-p.X)*(point.Y-p.Y)/(pj.Y-p.Y)+p.X) {
+			inside = !inside
+		}
+	}
+	return inside
 }
