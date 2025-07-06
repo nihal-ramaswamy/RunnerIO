@@ -68,13 +68,13 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 		go func() {
 			for {
 				msgs, err := h.amqpConfig.Channel.Consume(
-					groupCode, // queue
-					"",        // consumer
-					false,     // auto-ack
-					false,     // exclusive
-					false,     // no-local
-					false,     // no-wait
-					nil,       // args
+					groupCode,    // queue
+					userData.Sub, // consumer
+					false,        // auto-ack
+					false,        // exclusive
+					false,        // no-local
+					false,        // no-wait
+					nil,          // args
 				)
 				if err != nil {
 					h.log.Error("Failed to register a consumer", zap.Error(err))

@@ -40,7 +40,7 @@ func NewAmqpConfig(host string) (*AmqpConfig, error) {
 	}
 
 	_, err = ch.QueueDeclare(
-		constants.AUDIT_QUEUE_NAME, // Name of the queue
+		constants.LIVE_LINES_QUEUE_NAME, // Name of the queue
 		true,                       // Durable (persists across RabbitMQ restarts)
 		false,                      // Delete when unused (automatically deleted when no consumers)
 		false,                      // Exclusive (only one consumer can use the queue)
@@ -52,8 +52,8 @@ func NewAmqpConfig(host string) (*AmqpConfig, error) {
 	}
 
 	err = ch.QueueBind(
-		constants.AUDIT_QUEUE_NAME, // queue name
-		constants.AUDIT_QUEUE_NAME, // routing key
+		constants.LIVE_LINES_QUEUE_NAME, // queue name
+		constants.LIVE_LINES_QUEUE_NAME, // routing key
 		constants.EXCHANGE_NAME,    // exchange
 		true,
 		nil,

@@ -61,8 +61,8 @@ func (h *CreateRunnerGroupHandler) Handler() gin.HandlerFunc {
 		code := utils.CreateCode(h.mongoClient, h.log)
 
 		data := dtoschema.RunnerGroupSchema{
-			Group:     name,
-			Code:      code,
+			GroupName: name,
+			GroupCode: code,
 			CreatedAt: timeStamp,
 			Members:   members,
 			Owner:     userData.Sub,

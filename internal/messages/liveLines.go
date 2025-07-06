@@ -16,13 +16,13 @@ func PersistAuditData(
 	amqpconfig *amqpconfig.AmqpConfig,
 	mongoClient *mongo.Client, log *zap.Logger) {
 	msgs, err := amqpconfig.Channel.Consume(
-		constants.AUDIT_QUEUE_NAME, // queue
-		"",                         // consumer
-		false,                      // auto-ack
-		false,                      // exclusive
-		false,                      // no-local
-		false,                      // no-wait
-		nil,                        // args
+		constants.LIVE_LINES_QUEUE_NAME, // queue
+		"",                              // consumer
+		false,                           // auto-ack
+		false,                           // exclusive
+		false,                           // no-local
+		false,                           // no-wait
+		nil,                             // args
 	)
 	if err != nil {
 		log.Fatal("Failed to register a consumer: %s", zap.Error(err))
@@ -30,7 +30,7 @@ func PersistAuditData(
 	}
 
 	var forever chan struct{}
-	var data dtoschema.RunnerAuditSchema
+	var data dtoschema.RunnerLiveLinesSchema
 
 	go func() {
 		for d := range msgs {
@@ -40,13 +40,19 @@ func PersistAuditData(
 				continue
 			}
 
+			// Persist to Live Lines Db
 			go func() {
-				res, err := mongoClient.Database(constants.RUNNER_DATABASE).Collection(constants.RUNNER_AUDIT_COLLECTION).InsertOne(ctx, data)
+				res, err := mongoClient.Database(constants.RUNNER_DATABASE).Collection(constants.RUNNER_LIVE_LINES_COLLECTION).InsertOne(ctx, data)
 				if err != nil {
 					log.Error("Failed to insert document", zap.Error(err))
 					return
 				}
 				log.Info("Inserted document", zap.Any("id", res.InsertedID))
+			}()
+
+			// Eat processor
+			go func() {
+				RunProcessorOnGroup(ctx, data.GroupCode, mongoClient, amqpconfig, log)
 			}()
 
 		}
