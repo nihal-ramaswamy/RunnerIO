@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func getLiveLinesDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger) ([]dtoschema.RunnerLiveLinesSchema, error) {
-	return getData[dtoschema.RunnerLiveLinesSchema](ctx, mongoClient, groupCode, log, constants.RUNNER_LIVE_LINES_COLLECTION)
+func getLiveLinesDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger) ([]dtoschema.LiveLinesData, error) {
+	return getData[dtoschema.LiveLinesData](ctx, mongoClient, groupCode, log, constants.RUNNER_LIVE_LINES_COLLECTION)
 }
 
 func getPolygonDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger) ([]dtoschema.PolygonData, error) {

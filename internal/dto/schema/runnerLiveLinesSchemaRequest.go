@@ -9,8 +9,8 @@ type RunnerLiveLinesSchemaRequest struct {
 	GroupCode string  `json:"group_code"`
 }
 
-func (r *RunnerLiveLinesSchemaRequest) ToRunnerLiveLinesSchema(sender string) *RunnerLiveLinesSchema {
-	return &RunnerLiveLinesSchema{
+func (r *RunnerLiveLinesSchemaRequest) ToRunnerLiveLinesSchema(sender string) *LiveLinesData {
+	return &LiveLinesData{
 		X:         r.X,
 		Y:         r.Y,
 		Time:      time.UnixMilli(r.Time),

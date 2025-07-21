@@ -30,7 +30,7 @@ func PersistAuditData(
 	}
 
 	var forever chan struct{}
-	var data dtoschema.RunnerLiveLinesSchema
+	var data dtoschema.LiveLinesData
 
 	go func() {
 		for d := range msgs {

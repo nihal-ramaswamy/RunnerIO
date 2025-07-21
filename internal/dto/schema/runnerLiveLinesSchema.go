@@ -2,7 +2,7 @@ package dtoschema
 
 import "time"
 
-type RunnerLiveLinesSchema struct {
+type LiveLinesData struct {
 	X         float64   `json:"x" bson:"x"`
 	Y         float64   `json:"y" bson:"y"`
 	Time      time.Time `json:"time" bson:"time"`
@@ -10,7 +10,7 @@ type RunnerLiveLinesSchema struct {
 	GroupCode string    `json:"group_code" bson:"group_code"`
 }
 
-func ToPolygonData(runnerLiveLinesSchema *[]RunnerLiveLinesSchema) *PolygonData {
+func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) *PolygonData {
 	maxTime := (*runnerLiveLinesSchema)[len(*runnerLiveLinesSchema)-1].Time
 	coords := []CoordinateStruct{}
 	for _, liveLine := range *runnerLiveLinesSchema {
@@ -32,5 +32,5 @@ func ToPolygonData(runnerLiveLinesSchema *[]RunnerLiveLinesSchema) *PolygonData 
 }
 
 type TestGenerics interface {
-	RunnerLiveLinesSchema | PolygonData
+	LiveLinesData | PolygonData
 }
