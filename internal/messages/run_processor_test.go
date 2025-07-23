@@ -1457,3 +1457,103 @@ func TestEatPolygon13(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expectedLiveLineData, actualLiveLineData)
 	}
 }
+
+// Two runners
+// One has polygon, the other has a live path partially overlapping the polygon
+func TestEatPolygon14(t *testing.T) {
+	liveLinesData := []dtoschema.LiveLinesData{}
+	addToLiveLinesData(&liveLinesData, 1.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 2.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 3.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 5.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 6.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 7.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 8.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 9.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 10.0, 0.0, "nihal")
+
+	polygonData := []dtoschema.PolygonData{}
+
+	p1 := dtoschema.PolygonData{
+		Runner: "nihal1",
+		Coords: []dtoschema.CoordinateStruct{
+			{X: 4.0, Y: 6.0},
+			{X: 5.0, Y: 6.0},
+			{X: 7.0, Y: 6.0},
+			{X: 7.0, Y: 5.0},
+			{X: 7.0, Y: 4.0},
+			{X: 7.0, Y: 3.0},
+			{X: 7.0, Y: 2.0},
+			{X: 7.0, Y: 1.0},
+			{X: 7.0, Y: 0.0},
+			{X: 7.0, Y: -1.0},
+			{X: 7.0, Y: -2.0},
+			{X: 7.0, Y: -3.0},
+			{X: 6.0, Y: -3.0},
+			{X: 5.0, Y: -3.0},
+			{X: 4.0, Y: -3.0},
+			{X: 4.0, Y: -2.0},
+			{X: 4.0, Y: -1.0},
+			{X: 4.0, Y: 0.0},
+			{X: 4.0, Y: 1.0},
+			{X: 4.0, Y: 2.0},
+			{X: 4.0, Y: 3.0},
+			{X: 4.0, Y: 4.0},
+			{X: 4.0, Y: 5.0},
+		},
+	}
+	polygonData = append(polygonData, p1)
+	actualLiveLineData, actualPolygonData, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+
+	if err != nil {
+		t.Errorf("Failed to process data: %s", err)
+	}
+	expectedPolygonData := []dtoschema.PolygonData{
+		{
+			Runner: "nihal1",
+			Coords: []dtoschema.CoordinateStruct{
+				{X: 4.0, Y: 6.0},
+				{X: 5.0, Y: 6.0},
+				{X: 7.0, Y: 6.0},
+				{X: 7.0, Y: 5.0},
+				{X: 7.0, Y: 4.0},
+				{X: 7.0, Y: 3.0},
+				{X: 7.0, Y: 2.0},
+				{X: 7.0, Y: 1.0},
+				{X: 7.0, Y: 0.0},
+				{X: 7.0, Y: -1.0},
+				{X: 7.0, Y: -2.0},
+				{X: 7.0, Y: -3.0},
+				{X: 6.0, Y: -3.0},
+				{X: 5.0, Y: -3.0},
+				{X: 4.0, Y: -3.0},
+				{X: 4.0, Y: -2.0},
+				{X: 4.0, Y: -1.0},
+				{X: 4.0, Y: 0.0},
+				{X: 4.0, Y: 1.0},
+				{X: 4.0, Y: 2.0},
+				{X: 4.0, Y: 3.0},
+				{X: 4.0, Y: 4.0},
+				{X: 4.0, Y: 5.0},
+			},
+		},
+	}
+	expectedLiveLineData := []dtoschema.LiveLinesData{
+		{X: 8.0, Y: 0.0, Sender: "nihal"},
+		{X: 9.0, Y: 0.0, Sender: "nihal"},
+		{X: 10.0, Y: 0.0, Sender: "nihal"},
+	}
+
+	if !checkIfEqualPolygonData(actualPolygonData, expectedPolygonData) {
+		prettyPrint("Expected: ", expectedPolygonData)
+		prettyPrint("Got: ", actualPolygonData)
+		t.Errorf("Expected %v, got %v", expectedPolygonData, actualPolygonData)
+	}
+
+	if !checkIfEqualLiveLinesData(actualLiveLineData, expectedLiveLineData) {
+		prettyPrint2("Expected: ", expectedLiveLineData)
+		prettyPrint2("Got: ", actualLiveLineData)
+		t.Errorf("Expected %v, got %v", expectedLiveLineData, actualLiveLineData)
+	}
+}
