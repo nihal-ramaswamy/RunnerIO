@@ -42,10 +42,10 @@ const (
 	RABBITMQ_HOST = "RABBITMQ_HOST"
 
 	// Helpers
-	MGMT_ACCESS_TOKEN = "mgmtAccessToken"
-	TOKEN_EXPIRY_TIME = 23 * time.Hour
-	EXCHANGE_NAME     = "runner"
-	AUDIT_QUEUE_NAME  = "audit"
+	MGMT_ACCESS_TOKEN     = "mgmtAccessToken"
+	TOKEN_EXPIRY_TIME     = 23 * time.Hour
+	EXCHANGE_NAME         = "runner"
+	LIVE_LINES_QUEUE_NAME = "live_lines"
 
 	MAX_GROUP_MEMBERS = 16
 )

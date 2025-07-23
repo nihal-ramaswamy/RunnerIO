@@ -65,16 +65,21 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 			ws.Close()
 		}()
 
+		h.log.Info("declaring queue", zap.String("key", groupCode))
+		err = h.amqpConfig.DeclareAndBindQueue(groupCode, groupCode)
+		utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
+			"Failed to declare and bind queue", zap.Error(err))
+
 		go func() {
 			for {
 				msgs, err := h.amqpConfig.Channel.Consume(
-					groupCode, // queue
-					"",        // consumer
-					false,     // auto-ack
-					false,     // exclusive
-					false,     // no-local
-					false,     // no-wait
-					nil,       // args
+					groupCode,    // queue
+					userData.Sub, // consumer
+					false,        // auto-ack
+					false,        // exclusive
+					false,        // no-local
+					false,        // no-wait
+					nil,          // args
 				)
 				if err != nil {
 					h.log.Error("Failed to register a consumer", zap.Error(err))
@@ -95,6 +100,10 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 							h.groupCodeDataClientManagerMap.RemoveClient(groupCode, client)
 							client.Conn.Close()
 						}
+					}
+					err := d.Ack(false)
+					if err != nil {
+						h.log.Error("Failed to ack message", zap.Error(err))
 					}
 				}
 			}

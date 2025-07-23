@@ -51,7 +51,7 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 			"Failed to upgrade connection", zap.Error(err))
 		defer ws.Close()
 
-		var requestData dtoschema.RunnerAuditSchemaRequest
+		var requestData dtoschema.RunnerLiveLinesSchemaRequest
 
 		userDataStr := c.GetHeader("userData")
 		var userData dto.UserData
@@ -81,7 +81,7 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 			utils.FailIfError(err, c, h.log, http.StatusBadRequest,
 				"Incorrect message format", zap.Error(err))
 
-			data := requestData.ToRunnerAuditSchema(userData.Sub)
+			data := requestData.ToRunnerLiveLinesSchema(userData.Sub)
 
 			// Validate GroupCode - Ensure it's not empty
 			if requestData.GroupCode == "" {
@@ -96,10 +96,10 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 				"Failed to marshal request data", zap.Error(err))
 
 			// Publish the message to audit queue
-			err = h.amqpConfig.PublishWithContext(jsonData, constants.AUDIT_QUEUE_NAME, false)
+			err = h.amqpConfig.PublishWithContext(jsonData, constants.LIVE_LINES_QUEUE_NAME, true)
 			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 				"Failed to publish message to RabbitMQ",
-				zap.Error(err), zap.String("queue", constants.AUDIT_QUEUE_NAME))
+				zap.Error(err), zap.String("queue", constants.LIVE_LINES_QUEUE_NAME))
 
 			client, ok := h.persistAuditDataClientsMap.Get(userData.Sub)
 			if !ok {

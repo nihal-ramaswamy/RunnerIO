@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	healthcheck_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/healthCheck"
-	runner_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/runnerGroup"
-	runner_ws "github.com/nihal-ramaswamy/RunnerIO/internal/api/runnerWsGroup"
+	healthcheck_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/health_check"
+	runner_api "github.com/nihal-ramaswamy/RunnerIO/internal/api/runner_group"
+	runner_ws "github.com/nihal-ramaswamy/RunnerIO/internal/api/runner_ws_group"
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	wsdto "github.com/nihal-ramaswamy/RunnerIO/internal/dto/ws"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
