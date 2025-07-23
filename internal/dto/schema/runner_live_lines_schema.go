@@ -10,7 +10,7 @@ type LiveLinesData struct {
 	GroupCode string    `json:"group_code" bson:"group_code"`
 }
 
-func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) *PolygonData {
+func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {
 	maxTime := (*runnerLiveLinesSchema)[len(*runnerLiveLinesSchema)-1].Time
 	coords := []CoordinateStruct{}
 	for _, liveLine := range *runnerLiveLinesSchema {
@@ -24,7 +24,7 @@ func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) *PolygonData {
 		}
 	}
 
-	return &PolygonData{
+	return PolygonData{
 		Time:   maxTime,
 		Coords: coords,
 		Runner: (*runnerLiveLinesSchema)[0].Sender,

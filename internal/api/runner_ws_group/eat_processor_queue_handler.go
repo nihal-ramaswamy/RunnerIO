@@ -65,6 +65,11 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 			ws.Close()
 		}()
 
+		h.log.Info("declaring queue", zap.String("key", groupCode))
+		err = h.amqpConfig.DeclareAndBindQueue(groupCode, groupCode)
+		utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
+			"Failed to declare and bind queue", zap.Error(err))
+
 		go func() {
 			for {
 				msgs, err := h.amqpConfig.Channel.Consume(

@@ -41,11 +41,11 @@ func NewAmqpConfig(host string) (*AmqpConfig, error) {
 
 	_, err = ch.QueueDeclare(
 		constants.LIVE_LINES_QUEUE_NAME, // Name of the queue
-		true,                       // Durable (persists across RabbitMQ restarts)
-		false,                      // Delete when unused (automatically deleted when no consumers)
-		false,                      // Exclusive (only one consumer can use the queue)
-		true,                       // Wait (wait for the server to confirm the operation)
-		nil,                        // Arguments (additional queue parameters)
+		true,                            // Durable (persists across RabbitMQ restarts)
+		false,                           // Delete when unused (automatically deleted when no consumers)
+		false,                           // Exclusive (only one consumer can use the queue)
+		true,                            // Wait (wait for the server to confirm the operation)
+		nil,                             // Arguments (additional queue parameters)
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to declare queue: %s", err)
@@ -54,7 +54,7 @@ func NewAmqpConfig(host string) (*AmqpConfig, error) {
 	err = ch.QueueBind(
 		constants.LIVE_LINES_QUEUE_NAME, // queue name
 		constants.LIVE_LINES_QUEUE_NAME, // routing key
-		constants.EXCHANGE_NAME,    // exchange
+		constants.EXCHANGE_NAME,         // exchange
 		true,
 		nil,
 	)
@@ -78,27 +78,37 @@ func DefaultAmqpConfig() *AmqpConfig {
 	return config
 }
 
+func (c *AmqpConfig) DeclareAndBindQueue(queueName, routingKey string) error {
+	_, err := c.Channel.QueueDeclare(
+		queueName, // Name of the queue
+		true,      // Durable (persists across RabbitMQ restarts)
+		false,     // Delete when unused (automatically deleted when no consumers)
+		false,     // Exclusive (only one consumer can use the queue)
+		true,      // Wait (wait for the server to confirm the operation)
+		nil,       // Arguments (additional queue parameters)
+	)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.Channel.QueueBind(
+		routingKey,              // queue name
+		routingKey,              // routing key
+		constants.EXCHANGE_NAME, // exchange
+		true,
+		nil,
+	)
+
+	return err
+}
+
 func (c *AmqpConfig) PublishWithContext(data []byte, routingKey string, declareQueue bool) error {
 	if declareQueue {
-		_, err := c.Channel.QueueDeclare(
-			routingKey, // Name of the queue
-			true,       // Durable (persists across RabbitMQ restarts)
-			false,      // Delete when unused (automatically deleted when no consumers)
-			false,      // Exclusive (only one consumer can use the queue)
-			true,       // Wait (wait for the server to confirm the operation)
-			nil,        // Arguments (additional queue parameters)
-		)
+		err := c.DeclareAndBindQueue(routingKey, routingKey)
 		if err != nil {
 			return err
 		}
-
-		err = c.Channel.QueueBind(
-			routingKey,              // queue name
-			routingKey,              // routing key
-			constants.EXCHANGE_NAME, // exchange
-			true,
-			nil,
-		)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
