@@ -3,6 +3,7 @@ package runner_ws
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -93,14 +94,21 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 						h.log.Error("Failed to get clients for group code", zap.String("groupCode", groupCode))
 						return
 					}
+					var wg sync.WaitGroup
+					wg.Add(len(clients))
+
 					for _, client := range clients {
-						err := client.Conn.WriteMessage(websocket.TextMessage, d.Body)
-						if err != nil {
-							h.log.Error("Failed to write message", zap.Error(err))
-							h.groupCodeDataClientManagerMap.RemoveClient(groupCode, client)
-							client.Conn.Close()
-						}
+						go func() {
+							defer wg.Done()
+							err := client.Conn.WriteMessage(websocket.TextMessage, d.Body)
+							if err != nil {
+								h.log.Error("Failed to write message", zap.Error(err))
+								h.groupCodeDataClientManagerMap.RemoveClient(groupCode, client)
+								client.Conn.Close()
+							}
+						}()
 					}
+					wg.Wait()
 					err := d.Ack(false)
 					if err != nil {
 						h.log.Error("Failed to ack message", zap.Error(err))

@@ -1,10 +1,22 @@
 services:
-  go_runner:
-    container_name: go_runner
+  go_runner_service:
+    container_name: go_runner_service
     image: golang
-    build: .
+    build:
+      dockerfile: service.Dockerfile
     ports:
       - "8080:8080"
+    depends_on:
+      - mongo_express
+      - runner_redis
+      - amqp
+  go_runner_engine:
+    container_name: go_runner_engine
+    image: golang
+    build:
+      dockerfile: engine.Dockerfile
+    ports:
+      - "8080:6969"
     depends_on:
       - mongo_express
       - runner_redis

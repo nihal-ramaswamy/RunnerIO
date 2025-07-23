@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY . .
 
-RUN go get -d -v ./...
+RUN go get -v ./...
 
-RUN make build
+RUN make build_service
 
 EXPOSE 8080
 

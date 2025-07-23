@@ -7,7 +7,6 @@ import (
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	serverconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/server"
 	fx_utils "github.com/nihal-ramaswamy/RunnerIO/internal/fx"
-	"github.com/nihal-ramaswamy/RunnerIO/internal/messages"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
@@ -38,11 +37,4 @@ func Invoke(server *gin.Engine, config *serverconfig.Config, log *zap.Logger, ct
 			log.Error(err.Error())
 		}
 	}()
-
-	// TODO: This should be in a separate module
-	go func() {
-		log.Info("Starting Audit Consumer")
-		messages.PersistAuditData(ctx, amqpconfig, mongoClient, log)
-	}()
-
 }
