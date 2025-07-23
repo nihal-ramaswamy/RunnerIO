@@ -25,7 +25,7 @@ func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
 	}
 	if a[0].X > b[0].X {
 		return 1
-	} 
+	}
 	return 0
 }
 
@@ -125,7 +125,7 @@ func TestEatPolygon1(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 6.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 6.0, 6.0, "nihal1")
 
-	result, err := processData(liveLinesData, []dtoschema.PolygonData{}, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, []dtoschema.PolygonData{}, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -189,7 +189,7 @@ func TestEatPolygon2(t *testing.T) {
 	}
 	polygonData = append(polygonData, p1)
 
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -244,7 +244,7 @@ func TestEatPolygon3(t *testing.T) {
 	}
 	polygonData = append(polygonData, p1)
 
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -311,7 +311,7 @@ func TestEatPolygon4(t *testing.T) {
 	}
 	polygonData = append(polygonData, p1)
 
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -408,7 +408,7 @@ func TestEatPolygon5(t *testing.T) {
 	}
 	polygonData = append(polygonData, p1, p2)
 
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -471,7 +471,7 @@ func TestEatPolygon6(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 4.0, 6.0, "nihal")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -561,7 +561,7 @@ func TestEatPolygon7(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -723,7 +723,7 @@ func TestEatPolygon8(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -866,7 +866,7 @@ func TestEatPolygon9(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 1.0, 1.0, "nihal")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -1004,7 +1004,7 @@ func TestEatPolygon10(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -1138,7 +1138,7 @@ func TestEatPolygon11(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 1.0, 1.0, "nihal")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
@@ -1240,7 +1240,7 @@ func TestEatPolygon12(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 6.0, 1.0, "nihal1")
 
 	polygonData := []dtoschema.PolygonData{}
-	result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)

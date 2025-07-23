@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"time"
 
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
@@ -40,9 +41,14 @@ func RunProcessorOnGroup(
 		NumSecondsForCycle: 10,
 	}
 
-	finalData, err := processData(liveLinesData, polygonData, runProcessorConfig)
+	finalLiveLinesData, finalPolygonData, err := processData(liveLinesData, polygonData, runProcessorConfig)
 	if err != nil {
 		return fmt.Errorf("Failed to process data: %s", err)
+	}
+
+	finalData := dtoschema.RunnerResponse{
+		Polygons:  finalPolygonData,
+		LiveLines: finalLiveLinesData,
 	}
 
 	processedDataByte, err := json.Marshal(finalData)
@@ -68,7 +74,7 @@ It checks this for every polygon and every live line point.
 func processData(
 	liveLinesData []dtoschema.LiveLinesData,
 	polygonData []dtoschema.PolygonData,
-	runProcessorConfig RunProcessorConfig) ([]dtoschema.PolygonData, error) {
+	runProcessorConfig RunProcessorConfig) ([]dtoschema.LiveLinesData, []dtoschema.PolygonData, error) {
 	// Get polygons that are formed by the live lines per user. Sort it be time in latest to oldest order
 
 	// Step 1: Segregate the points
@@ -83,9 +89,68 @@ func processData(
 	// Step 4: clean polygon data: Remove overlapping sections of older polygons. Merge polygons ran by the same user
 	newPolygons = cleanPolygons(newPolygons)
 
-	// TOOD: Remove points from live lines data that are inside the polygons
+	// TODO: Remove points from live lines data that are inside the polygons
+	newLiveLinesData := removePointsFromLiveLinesData(liveLinesData, newPolygons)
 
-	return newPolygons, nil
+	return newLiveLinesData, newPolygons, nil
+}
+
+/*
+ * For each point in live lines data, check if it is inside any polygon.
+ * If it is store the time of entry of the live lines data.
+ * Any point by that runner which occurs before the time of entry is removed from the live lines data.
+ * Do this for every runner.
+ */
+func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, polygons []dtoschema.PolygonData) []dtoschema.LiveLinesData {
+	mapLastPointBeforeDeletion := make(map[string]time.Time)
+
+	for _, liveLinesData := range liveLinesData {
+
+		runner := liveLinesData.Sender
+
+		val, ok := mapLastPointBeforeDeletion[runner]
+		if ok {
+			if liveLinesData.Time.Before(val) {
+				continue
+			}
+		}
+
+		point := dtoschema.CoordinateStruct{
+			X: liveLinesData.X,
+			Y: liveLinesData.Y,
+		}
+		currMaxTime := liveLinesData.Time
+		isAnyPointInPolygon := false
+
+		for _, polygon := range polygons {
+			temp := isPointInPolygon(point, polygon.Coords)
+			if temp {
+				isAnyPointInPolygon = true
+				if polygon.Time.After(currMaxTime) {
+					currMaxTime = polygon.Time
+				}
+			}
+		}
+
+		if isAnyPointInPolygon {
+			mapLastPointBeforeDeletion[runner] = currMaxTime
+		}
+	}
+
+	newLiveLinesData := []dtoschema.LiveLinesData{}
+
+	for _, liveLinesData := range liveLinesData {
+		runner := liveLinesData.Sender
+		val, ok := mapLastPointBeforeDeletion[runner]
+		if ok {
+			if liveLinesData.Time.Before(val) {
+				continue
+			}
+		}
+		newLiveLinesData = append(newLiveLinesData, liveLinesData)
+	}
+
+	return newLiveLinesData
 }
 
 /*
