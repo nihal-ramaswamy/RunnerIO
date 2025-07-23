@@ -25,7 +25,7 @@ func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
 	}
 	if a[0].X > b[0].X {
 		return 1
-	}
+	} 
 	return 0
 }
 

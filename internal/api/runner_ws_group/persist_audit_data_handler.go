@@ -96,7 +96,7 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 				"Failed to marshal request data", zap.Error(err))
 
 			// Publish the message to audit queue
-			err = h.amqpConfig.PublishWithContext(jsonData, constants.LIVE_LINES_QUEUE_NAME, false)
+			err = h.amqpConfig.PublishWithContext(jsonData, constants.LIVE_LINES_QUEUE_NAME, true)
 			utils.FailIfError(err, c, h.log, http.StatusInternalServerError,
 				"Failed to publish message to RabbitMQ",
 				zap.Error(err), zap.String("queue", constants.LIVE_LINES_QUEUE_NAME))

@@ -29,7 +29,7 @@ func PersistAuditData(
 		return
 	}
 
-	var forever chan struct{}
+	forever := make(chan struct{})
 	var data dtoschema.LiveLinesData
 
 	go func() {
@@ -50,7 +50,7 @@ func PersistAuditData(
 				log.Info("Inserted document", zap.Any("id", res.InsertedID))
 			}()
 
-			// Eat processor
+			// Run Polygon processor
 			go func() {
 				RunProcessorOnGroup(ctx, data.GroupCode, mongoClient, amqpconfig, log)
 			}()
