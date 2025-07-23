@@ -3,6 +3,7 @@ package messages
 import (
 	"context"
 	"encoding/json"
+	"sync"
 
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
@@ -32,6 +33,8 @@ func PersistAuditData(
 	forever := make(chan struct{})
 	var data dtoschema.LiveLinesData
 
+	var wg sync.WaitGroup
+
 	go func() {
 		for d := range msgs {
 			log.Info("Received a message", zap.String("message", string(d.Body)))
@@ -40,8 +43,10 @@ func PersistAuditData(
 				continue
 			}
 
+			wg.Add(1)
 			// Persist to Live Lines Db
 			go func() {
+				defer wg.Done()
 				res, err := mongoClient.Database(constants.RUNNER_DATABASE).Collection(constants.RUNNER_LIVE_LINES_COLLECTION).InsertOne(ctx, data)
 				if err != nil {
 					log.Error("Failed to insert document", zap.Error(err))
@@ -50,10 +55,18 @@ func PersistAuditData(
 				log.Info("Inserted document", zap.Any("id", res.InsertedID))
 			}()
 
+			wg.Add(1)
 			// Run Polygon processor
 			go func() {
+				defer wg.Done()
 				RunProcessorOnGroup(ctx, data.GroupCode, mongoClient, amqpconfig, log)
 			}()
+
+			wg.Wait()
+			err := d.Ack(false)
+			if err != nil {
+				log.Error("Failed to ack message", zap.Error(err))
+			}
 
 		}
 	}()

@@ -101,6 +101,10 @@ func (h *EatProcessorQueueHandler) Handler() gin.HandlerFunc {
 							client.Conn.Close()
 						}
 					}
+					err := d.Ack(false)
+					if err != nil {
+						h.log.Error("Failed to ack message", zap.Error(err))
+					}
 				}
 			}
 		}()

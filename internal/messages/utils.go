@@ -23,6 +23,10 @@ func getData[T dtoschema.TestGenerics](ctx context.Context, mongoClient *mongo.C
 		return nil, err
 	}
 
+	type dataStruct struct {
+		Data T `bson:"data"`
+	}
+
 	data := []T{}
 
 	for cursor.Next(ctx) {
@@ -33,13 +37,19 @@ func getData[T dtoschema.TestGenerics](ctx context.Context, mongoClient *mongo.C
 		}
 		log.Info("Processing document", zap.Any("data", d))
 
-		var groupData T
-		if err := bson.UnmarshalExtJSON([]byte(d["data"].(string)), true, &groupData); err != nil {
+		dByte, err := bson.MarshalExtJSON(d, true, true)
+		if err != nil {
+			log.Error("Failed to marshal document", zap.Error(err))
+			continue
+		}
+
+		var groupData dataStruct
+		if err := bson.UnmarshalExtJSON(dByte, true, &groupData); err != nil {
 			log.Error("Failed to unmarshal document", zap.Error(err))
 			continue
 		}
 
-		data = append(data, groupData)
+		data = append(data, groupData.Data)
 	}
 
 	return data, nil
