@@ -29,6 +29,16 @@ func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
 	return 0
 }
 
+func sortCoordsFunc2(a, b dtoschema.CoordinateStruct) int {
+	if a.X < b.X {
+		return -1
+	}
+	if a.X > b.X {
+		return 1
+	}
+	return 0
+}
+
 func checkIfCoordsEqual(result, expected []dtoschema.CoordinateStruct) bool {
 	if len(result) != len(expected) {
 		return false
@@ -42,7 +52,7 @@ func checkIfCoordsEqual(result, expected []dtoschema.CoordinateStruct) bool {
 	return true
 }
 
-func checkIfEqual(result, expected []dtoschema.PolygonData) bool {
+func checkIfEqualPolygonData(result, expected []dtoschema.PolygonData) bool {
 	if len(result) != len(expected) {
 		return false
 	}
@@ -80,6 +90,50 @@ func checkIfEqual(result, expected []dtoschema.PolygonData) bool {
 	return true
 }
 
+func checkIfEqualLiveLinesData(result, expected []dtoschema.LiveLinesData) bool {
+	if len(result) != len(expected) {
+		return false
+	}
+
+	resultToRunnerMap := make(map[string][]dtoschema.CoordinateStruct)
+	expectedToRunnerMap := make(map[string][]dtoschema.CoordinateStruct)
+
+	for _, resultPolygon := range result {
+		resultToRunnerMap[resultPolygon.Sender] = append(resultToRunnerMap[resultPolygon.Sender], dtoschema.CoordinateStruct{
+			X: resultPolygon.X,
+			Y: resultPolygon.Y,
+		})
+	}
+	for _, expectedPolygon := range expected {
+		expectedToRunnerMap[expectedPolygon.Sender] = append(expectedToRunnerMap[expectedPolygon.Sender], dtoschema.CoordinateStruct{
+			X: expectedPolygon.X,
+			Y: expectedPolygon.Y,
+		})
+	}
+
+	for _, resultCoords := range resultToRunnerMap {
+		slices.SortFunc(resultCoords, sortCoordsFunc2)
+	}
+	for _, expectedCoords := range expectedToRunnerMap {
+		slices.SortFunc(expectedCoords, sortCoordsFunc2)
+	}
+
+	for sender, resultCoords := range resultToRunnerMap {
+		expectedCoords := expectedToRunnerMap[sender]
+		if len(resultCoords) != len(expectedCoords) {
+			return false
+		}
+		for i, resultCoord := range resultCoords {
+			expectedCoord := expectedCoords[i]
+			if resultCoord.X != expectedCoord.X || resultCoord.Y != expectedCoord.Y {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 func addToLiveLinesData(liveLinesData *[]dtoschema.LiveLinesData, X, Y float64, sender string) {
 	currentTime := time.Now()
 	newLiveLines := dtoschema.LiveLinesData{
@@ -99,6 +153,13 @@ func prettyPrint(val string, data []dtoschema.PolygonData) {
 		for _, coord := range polygon.Coords {
 			fmt.Println(coord.X, coord.Y)
 		}
+	}
+}
+
+func prettyPrint2(val string, data []dtoschema.LiveLinesData) {
+	fmt.Println(val)
+	for _, polygon := range data {
+		fmt.Printf("Runner: %v, X: %v, Y: %v\n", polygon.Sender, polygon.X, polygon.Y)
 	}
 }
 
@@ -154,7 +215,7 @@ func TestEatPolygon1(t *testing.T) {
 		}},
 	}
 
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected", expected)
 		prettyPrint("Got", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -212,7 +273,7 @@ func TestEatPolygon2(t *testing.T) {
 		}},
 	}
 
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -269,7 +330,7 @@ func TestEatPolygon3(t *testing.T) {
 		}},
 	}
 
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -346,7 +407,7 @@ func TestEatPolygon4(t *testing.T) {
 		}},
 	}
 
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -455,7 +516,7 @@ func TestEatPolygon5(t *testing.T) {
 		}},
 	}
 
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -478,7 +539,7 @@ func TestEatPolygon6(t *testing.T) {
 	}
 
 	expected := []dtoschema.PolygonData{}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -640,7 +701,7 @@ func TestEatPolygon7(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -808,7 +869,7 @@ func TestEatPolygon8(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -922,7 +983,7 @@ func TestEatPolygon9(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -1083,7 +1144,7 @@ func TestEatPolygon10(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -1189,7 +1250,7 @@ func TestEatPolygon11(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
@@ -1293,9 +1354,106 @@ func TestEatPolygon12(t *testing.T) {
 			},
 		},
 	}
-	if !checkIfEqual(result, expected) {
+	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
 		t.Errorf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Two runners
+// One has polygon, the other has a live path partially overlapping the polygon
+func TestEatPolygon13(t *testing.T) {
+	liveLinesData := []dtoschema.LiveLinesData{}
+	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 5.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 6.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 7.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 8.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 9.0, 0.0, "nihal")
+	addToLiveLinesData(&liveLinesData, 10.0, 0.0, "nihal")
+
+	polygonData := []dtoschema.PolygonData{}
+
+	p1 := dtoschema.PolygonData{
+		Runner: "nihal1",
+		Coords: []dtoschema.CoordinateStruct{
+			{X: 4.0, Y: 6.0},
+			{X: 5.0, Y: 6.0},
+			{X: 7.0, Y: 6.0},
+			{X: 7.0, Y: 5.0},
+			{X: 7.0, Y: 4.0},
+			{X: 7.0, Y: 3.0},
+			{X: 7.0, Y: 2.0},
+			{X: 7.0, Y: 1.0},
+			{X: 7.0, Y: 0.0},
+			{X: 7.0, Y: -1.0},
+			{X: 7.0, Y: -2.0},
+			{X: 7.0, Y: -3.0},
+			{X: 6.0, Y: -3.0},
+			{X: 5.0, Y: -3.0},
+			{X: 4.0, Y: -3.0},
+			{X: 4.0, Y: -2.0},
+			{X: 4.0, Y: -1.0},
+			{X: 4.0, Y: 0.0},
+			{X: 4.0, Y: 1.0},
+			{X: 4.0, Y: 2.0},
+			{X: 4.0, Y: 3.0},
+			{X: 4.0, Y: 4.0},
+			{X: 4.0, Y: 5.0},
+		},
+	}
+	polygonData = append(polygonData, p1)
+	actualLiveLineData, actualPolygonData, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
+
+	if err != nil {
+		t.Errorf("Failed to process data: %s", err)
+	}
+	expectedPolygonData := []dtoschema.PolygonData{
+		{
+			Runner: "nihal1",
+			Coords: []dtoschema.CoordinateStruct{
+				{X: 4.0, Y: 6.0},
+				{X: 5.0, Y: 6.0},
+				{X: 7.0, Y: 6.0},
+				{X: 7.0, Y: 5.0},
+				{X: 7.0, Y: 4.0},
+				{X: 7.0, Y: 3.0},
+				{X: 7.0, Y: 2.0},
+				{X: 7.0, Y: 1.0},
+				{X: 7.0, Y: 0.0},
+				{X: 7.0, Y: -1.0},
+				{X: 7.0, Y: -2.0},
+				{X: 7.0, Y: -3.0},
+				{X: 6.0, Y: -3.0},
+				{X: 5.0, Y: -3.0},
+				{X: 4.0, Y: -3.0},
+				{X: 4.0, Y: -2.0},
+				{X: 4.0, Y: -1.0},
+				{X: 4.0, Y: 0.0},
+				{X: 4.0, Y: 1.0},
+				{X: 4.0, Y: 2.0},
+				{X: 4.0, Y: 3.0},
+				{X: 4.0, Y: 4.0},
+				{X: 4.0, Y: 5.0},
+			},
+		},
+	}
+	expectedLiveLineData := []dtoschema.LiveLinesData{
+		{X: 8.0, Y: 0.0, Sender: "nihal"},
+		{X: 9.0, Y: 0.0, Sender: "nihal"},
+		{X: 10.0, Y: 0.0, Sender: "nihal"},
+	}
+
+	if !checkIfEqualPolygonData(actualPolygonData, expectedPolygonData) {
+		prettyPrint("Expected: ", expectedPolygonData)
+		prettyPrint("Got: ", actualPolygonData)
+		t.Errorf("Expected %v, got %v", expectedPolygonData, actualPolygonData)
+	}
+
+	if !checkIfEqualLiveLinesData(actualLiveLineData, expectedLiveLineData) {
+		prettyPrint2("Expected: ", expectedLiveLineData)
+		prettyPrint2("Got: ", actualLiveLineData)
+		t.Errorf("Expected %v, got %v", expectedLiveLineData, actualLiveLineData)
 	}
 }

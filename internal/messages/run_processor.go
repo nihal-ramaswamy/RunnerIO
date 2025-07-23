@@ -143,7 +143,7 @@ func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, poly
 		runner := liveLinesData.Sender
 		val, ok := mapLastPointBeforeDeletion[runner]
 		if ok {
-			if liveLinesData.Time.Before(val) {
+			if !liveLinesData.Time.After(val) {
 				continue
 			}
 		}
