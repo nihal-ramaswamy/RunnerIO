@@ -4,13 +4,15 @@ type DistanceFuncType = func(lat1 float64, lng1 float64, lat2 float64, lng2 floa
 
 type RunProcessorConfig struct {
 	DistanceFunc            DistanceFuncType
+	DoSecondsForCycleCheck  bool
 	NumSecondsForCycle      int64
 	MetersThresholdForCycle float64
 }
 
-func NewRunProcessorConfig(distanceFunc DistanceFuncType, numSecondsForCycle int64, metersThresholdForCycle float64) RunProcessorConfig {
+func NewRunProcessorConfig(distanceFunc DistanceFuncType, doSecondsForCycleCheck bool, numSecondsForCycle int64, metersThresholdForCycle float64) RunProcessorConfig {
 	return RunProcessorConfig{
 		DistanceFunc:            distanceFunc,
+		DoSecondsForCycleCheck:  doSecondsForCycleCheck,
 		NumSecondsForCycle:      numSecondsForCycle,
 		MetersThresholdForCycle: metersThresholdForCycle,
 	}

@@ -37,8 +37,10 @@ func RunProcessorOnGroup(
 	}
 
 	runProcessorConfig := RunProcessorConfig{
-		DistanceFunc:       distance,
-		NumSecondsForCycle: 10,
+		DistanceFunc:            distance,
+		NumSecondsForCycle:      10,
+		DoSecondsForCycleCheck:  true,
+		MetersThresholdForCycle: 1,
 	}
 
 	finalLiveLinesData, finalPolygonData, err := processData(liveLinesData, polygonData, runProcessorConfig)

@@ -91,7 +91,7 @@ func IsCycle(liveLines *[]dtoschema.LiveLinesData, runProcessorConfig *RunProces
 	lastPoint := (*liveLines)[len(*liveLines)-1]
 
 	// Rule for a cycle: The first and last point should have a distance of less than half a meter and the time difference should be more than 10 seconds
-	if firstPoint.Time.Sub(lastPoint.Time).Seconds() < float64(runProcessorConfig.NumSecondsForCycle)-constants.DELTA {
+	if runProcessorConfig.DoSecondsForCycleCheck && firstPoint.Time.Sub(lastPoint.Time).Seconds() < float64(runProcessorConfig.NumSecondsForCycle)-constants.DELTA {
 		return false
 	}
 

@@ -16,7 +16,7 @@ func distanceForTest(lat1 float64, lng1 float64, lat2 float64, lng2 float64) flo
 }
 
 func getRunProcessorConfig() RunProcessorConfig {
-	return NewRunProcessorConfig(distanceForTest, 0, 3)
+	return NewRunProcessorConfig(distanceForTest, false, 0, 3)
 }
 
 func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
