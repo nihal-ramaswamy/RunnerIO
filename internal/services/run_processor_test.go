@@ -54,6 +54,7 @@ func checkIfCoordsEqual(result, expected []dtoschema.CoordinateStruct) bool {
 
 func checkIfEqualPolygonData(result, expected []dtoschema.PolygonData) bool {
 	if len(result) != len(expected) {
+		fmt.Printf("Expected %v, got %v\n", len(expected), len(result))
 		return false
 	}
 
@@ -77,11 +78,13 @@ func checkIfEqualPolygonData(result, expected []dtoschema.PolygonData) bool {
 	for runner, resultCoords := range resultToRunnerMap {
 		expectedCoords := expectedToRunnerMap[runner]
 		if len(resultCoords) != len(expectedCoords) {
+			fmt.Printf("Expected for runner: %v %v, got %v\n", runner, len(expectedCoords), len(resultCoords))
 			return false
 		}
 		for i, resultCoord := range resultCoords {
 			expectedCoord := expectedCoords[i]
 			if !checkIfCoordsEqual(resultCoord, expectedCoord) {
+				fmt.Printf("%v coord not matching for runner %v\n", i, runner)
 				return false
 			}
 		}
