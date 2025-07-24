@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"math"
 
 	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,5 +45,5 @@ func getPolygonArea(coords []dtoschema.CoordinateStruct) float64 {
 		area += (x1*y2 - x2*y1)
 	}
 
-	return area / 2
+	return math.Abs(area / 2)
 }
