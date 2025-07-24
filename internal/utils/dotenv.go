@@ -9,7 +9,6 @@ import (
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 )
 
-// TODO: Clean this piece of code.
 func validateEnvVariable(value string) (bool, error) {
 	if value == "debug" || value == "release" || value == "test" {
 		return true, nil
@@ -32,6 +31,19 @@ func GetDotEnvVariable(key string) string {
 	if key == constants.ENV {
 		if _, err := validateEnvVariable(value); nil != err {
 			os.Exit(1)
+		}
+	}
+
+	if key == constants.SERVER_PORT {
+		val := os.Getenv(constants.SERVER)
+		if val != constants.SERVICE && val != constants.ENGINE {
+			log.Fatalf("Server must be either 'service' or 'engine'. Provided: %v", val)
+		}
+		switch val {
+		case constants.SERVICE:
+			value = os.Getenv(constants.SERVER_SERVICE_PORT)
+		case constants.ENGINE:
+			value = os.Getenv(constants.SERVER_ENGINE_PORT)
 		}
 	}
 
