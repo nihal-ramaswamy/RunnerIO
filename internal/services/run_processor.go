@@ -198,7 +198,14 @@ func cleanPolygons(polygons []dtoschema.PolygonData) []dtoschema.PolygonData {
 	}
 
 	cleanedPolygonsMergedList := []dtoschema.PolygonData{}
-	for _, polygon := range cleanedPolygonsMerged {
+	runners := make([]string, 0, len(cleanedPolygonsMerged))
+	for runner := range cleanedPolygonsMerged {
+		runners = append(runners, runner)
+	}
+	slices.Sort(runners)
+
+	for _, runner := range runners {
+		polygon := cleanedPolygonsMerged[runner]
 		for _, p := range polygon {
 			cleanedPolygonsMergedList = append(cleanedPolygonsMergedList, p)
 		}
