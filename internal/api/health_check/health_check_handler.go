@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Health Check
+// @Description Health Check Endpoint for all users.
+// @Tags Health Check
+// @Produce json
+// @Success 200 {object} dto.UserData
+// @Router /healthcheck/healthcheck [get]
 type HealthCheckHandler struct {
 	middlewares []gin.HandlerFunc
 

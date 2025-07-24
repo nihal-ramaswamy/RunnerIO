@@ -13,6 +13,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Health Check for Auth
+// @Description Health Check Endpoint for authenticated users. Users need to have read:all permission.
+// @Tags Health Check
+// @Produce json
+// @Success 200 {object} dto.UserData
+// @Router /healthcheck/authHealthcheck [get]
 type AuthHealthCheckHandler struct {
 	middlewares []gin.HandlerFunc
 	log         *zap.Logger

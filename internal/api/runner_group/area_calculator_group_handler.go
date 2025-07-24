@@ -12,6 +12,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Find Area for each runner of the group
+// @Description Find Area for each runner of the group
+// @Tags Runner Group
+// @Produce json
+// @Success 200 {object} map[string]float64
+// @Router /runner/area/{groupCode} [get]
 type AreaCalculatorGroupHandler struct {
 	ctx         context.Context
 	mongoClient *mongo.Client

@@ -16,6 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Join Runner Group
+// @Description Join Runner Group
+// @Tags Runner Group
+// @Produce json
+// @Success 200 {object} {message: "Joined group successfully"}
+// @Success 200 {object} {message: "You are already a member of this group"}
+// @Failure 200 {object} {message: "Group is full"}
+// @Router /runner/joinRunnerGroup/{groupCode} [get]
 type JoinRunnerGroupHandler struct {
 	ctx         context.Context
 	mongoClient *mongo.Client

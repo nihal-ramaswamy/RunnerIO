@@ -17,6 +17,11 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Persist Audit Data
+// @Description Join the websocket to continuously send points to the live lines queue.
+// @Tags Runner WS Group
+// @Message {object} dtoschema.RunnerLiveLinesSchemaRequest
+// @Router /ws/putOnQueueGroup/ [ws]
 type PersistAuditDataGroupHandler struct {
 	amqpConfig                 *amqpconfig.AmqpConfig
 	log                        *zap.Logger

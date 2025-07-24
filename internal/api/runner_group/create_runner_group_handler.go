@@ -16,6 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary Create Runner Group
+// @Description Create Runner Group
+// @Tags Runner Group
+// @Produce json
+// @Success 200 {object} {message: "Group created successfully"}
+// @Failure 400 {object} dto.ErrorResponse
+// @Router /runner/createRunnerGroup/ [post]
+// @Body {object} {group: string}
 type CreateRunnerGroupHandler struct {
 	ctx         context.Context
 	mongoClient *mongo.Client
