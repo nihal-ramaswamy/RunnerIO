@@ -3,11 +3,12 @@ package dtoschema
 import "time"
 
 type LiveLinesData struct {
-	X         float64   `json:"x" bson:"x"`
-	Y         float64   `json:"y" bson:"y"`
-	Time      time.Time `json:"time" bson:"time"`
-	Sender    string    `json:"sender" bson:"sender"`
-	GroupCode string    `json:"group_code" bson:"group_code"`
+	X            float64   `json:"x" bson:"x"`
+	Y            float64   `json:"y" bson:"y"`
+	Time         time.Time `json:"time" bson:"time"`
+	Sender       string    `json:"sender" bson:"sender"`
+	GroupCode    string    `json:"group_code" bson:"group_code"`
+	InsertedTime time.Time `json:"inserted_time" bson:"inserted_time"`
 }
 
 func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {

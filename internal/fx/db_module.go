@@ -6,8 +6,25 @@ import (
 	"go.uber.org/fx"
 )
 
-var DBModule = fx.Module(
-	"DB",
-	fx.Provide(redisconfig.NewRedisClient),
+var DBModuleService = fx.Module(
+	"DB_Service",
+	fx.Provide(
+		fx.Annotate(
+			redisconfig.NewRedisClient,
+			fx.ParamTags(``, ``, `name:"auth_rdb_config"`),
+			fx.ResultTags(`name:"auth_rdb"`),
+		),
+	),
+	fx.Provide(mongodbconfig.Connect),
+)
+
+var DBModuleEngine = fx.Module(
+	"DB_Engine",
+	fx.Provide(
+		fx.Annotate(
+			redisconfig.NewRedisClient,
+			fx.ParamTags(``, ``, `name:"engine_rdb_config"`),
+		),
+	),
 	fx.Provide(mongodbconfig.Connect),
 )

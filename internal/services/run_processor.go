@@ -25,7 +25,7 @@ func RunProcessorOnGroup(
 	mongoClient *mongo.Client,
 	amqpconfig *amqpconfig.AmqpConfig,
 	log *zap.Logger) error {
-
+	
 	liveLinesData, err := getLiveLinesDataFromMongo(ctx, mongoClient, groupCode, log)
 	if err != nil {
 		return fmt.Errorf("Failed to get live lines data from mongo: %s", err)

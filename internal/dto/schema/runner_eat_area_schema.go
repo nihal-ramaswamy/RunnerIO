@@ -9,9 +9,10 @@ type CoordinateStruct struct {
 }
 
 type PolygonData struct {
-	Coords []CoordinateStruct `json:"coordinates"`
-	Runner string             `json:"runner"`
-	Time   time.Time          `json:"time"`
+	Coords       []CoordinateStruct `json:"coordinates"`
+	Runner       string             `json:"runner"`
+	Time         time.Time          `json:"time"`
+	InsertedTime time.Time          `json:"inserted_time"`
 }
 
 type userData struct {

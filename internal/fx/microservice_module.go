@@ -6,6 +6,6 @@ import (
 
 var MicroServicesModule = fx.Module(
 	"MicroServices",
-	cacheModule,
+	CacheModule,
 	serverModule,
 )

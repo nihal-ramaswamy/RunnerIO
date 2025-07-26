@@ -8,6 +8,7 @@ import (
 	serverconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/server"
 	fx_utils "github.com/nihal-ramaswamy/RunnerIO/internal/fx"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/services"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,7 +25,7 @@ func main() {
 		}),
 
 		fx_utils.ConfigModule,
-		fx_utils.DBModule,
+		fx_utils.DBModuleEngine,
 		fx_utils.DTOModule,
 		fx_utils.MicroServicesModule,
 
@@ -32,7 +33,7 @@ func main() {
 	).Run()
 }
 
-func Invoke(server *gin.Engine, config *serverconfig.Config, log *zap.Logger, ctx context.Context, amqpconfig *amqpconfig.AmqpConfig, mongoClient *mongo.Client) {
+func Invoke(redisClient *redis.Client, server *gin.Engine, config *serverconfig.Config, log *zap.Logger, ctx context.Context, amqpconfig *amqpconfig.AmqpConfig, mongoClient *mongo.Client) {
 	go func() {
 		log.Info("Starting Audit Consumer")
 		services.PersistAuditData(ctx, amqpconfig, mongoClient, log)

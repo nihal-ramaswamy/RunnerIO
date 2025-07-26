@@ -6,7 +6,7 @@ import (
 	"go.uber.org/fx"
 )
 
-var cacheModule = fx.Module(
+var CacheModule = fx.Module(
 	"CacheService",
 	fx.Provide(func() context.Context {
 		return context.Background()

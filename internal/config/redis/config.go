@@ -61,3 +61,7 @@ func WithRedisDB(db int) func(*RedisConfig) {
 func DefaultRedisConfigForAuth() *RedisConfig {
 	return NewRedisConfig(WithRedisDB(0))
 }
+
+func DefaultRedisConfigForEngine() *RedisConfig {
+	return NewRedisConfig(WithRedisDB(1))
+}

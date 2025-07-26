@@ -20,10 +20,10 @@ import (
 
 func newServerEngine(
 	lc fx.Lifecycle,
+	redisClient *redis.Client,
 	config *serverconfig.Config,
 	log *zap.Logger,
 	ctx context.Context,
-	redisClient *redis.Client,
 	mongoClient *mongo.Client,
 	ampqConfig *amqpconfig.AmqpConfig,
 	websocket *websocket.Upgrader,
@@ -74,6 +74,6 @@ func newServerEngine(
 var serverModule = fx.Module(
 	"serverModule",
 	fx.Provide(
-		newServerEngine,
+		fx.Annotate(newServerEngine, fx.ParamTags(``, `name:"auth_rdb"`)),
 	),
 )
