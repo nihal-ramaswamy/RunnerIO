@@ -2,21 +2,54 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"slices"
+	"strconv"
+	"time"
 
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
 
-func getData[T dtoschema.TestGenerics](ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger, collectionName string) ([]T, error) {
+func putData[T dtoschema.TestGenerics](
+	ctx context.Context,
+	mongoClient *mongo.Client,
+	groupCode string,
+	log *zap.Logger,
+	collectionName string,
+	data []T) ([]interface{}, error) {
+	dataInterface := []interface{}{}
+	for _, d := range data {
+		dataInterface = append(dataInterface, d)
+	}
+	results, err := mongoClient.Database(
+		constants.RUNNER_DATABASE).Collection(
+		collectionName).InsertMany(
+		ctx, dataInterface)
+
+	if err != nil {
+		log.Error("Failed to insert data", zap.Error(err))
+	}
+	return []interface{}{results}, err
+
+}
+
+func getData[T dtoschema.TestGenerics](
+	ctx context.Context,
+	mongoClient *mongo.Client,
+	groupCode string,
+	log *zap.Logger,
+	collectionName string,
+	currentMaxTime int) ([]T, error) {
 	cursor, err := mongoClient.Database(
 		constants.RUNNER_DATABASE).Collection(
 		collectionName).Find(
-		ctx, bson.M{"group_code": groupCode})
+		ctx, bson.M{"group_code": groupCode, "inserted_time": bson.M{"$gte": currentMaxTime}})
 
 	if err != nil {
 		log.Error("Failed to find document", zap.Error(err))
@@ -28,6 +61,7 @@ func getData[T dtoschema.TestGenerics](ctx context.Context, mongoClient *mongo.C
 	}
 
 	data := []T{}
+	maxTime := -1
 
 	for cursor.Next(ctx) {
 		var d bson.M
@@ -50,9 +84,18 @@ func getData[T dtoschema.TestGenerics](ctx context.Context, mongoClient *mongo.C
 		}
 
 		data = append(data, groupData.Data)
+		maxTime = max(maxTime, groupData.Data.GetInsertedTime())
 	}
 
-	return data, nil
+	dataWithMaxTime := make([]T, 0)
+	for _, d := range data {
+		if d.GetInsertedTime() < maxTime {
+			continue
+		}
+		dataWithMaxTime = append(dataWithMaxTime, d)
+	}
+
+	return dataWithMaxTime, nil
 }
 
 // https://gist.github.com/hotdang-ca/6c1ee75c48e515aec5bc6db6e3265e49
@@ -200,4 +243,26 @@ func isPointInPolygon(point dtoschema.CoordinateStruct, polygon []dtoschema.Coor
 		}
 	}
 	return inside
+}
+
+func getCurrentMaxTime(ctx context.Context, redisClient *redis.Client, groupCode string, log *zap.Logger) int {
+	startTime := time.Unix(0, 0).Nanosecond()
+	key := fmt.Sprintf("%s:%s", constants.REDIS_CURRENT_MAX_TIME, groupCode)
+	maxTimeStr, err := redisClient.Get(ctx, key).Result()
+
+	if err != nil {
+		log.Error("Failed to get current max time", zap.Error(err))
+		return startTime
+	}
+	if maxTimeStr == "" {
+		return startTime
+	}
+	maxTimeInt, err := strconv.Atoi(maxTimeStr)
+	if err != nil {
+		log.Error("Failed to convert max time to int", zap.Error(err))
+		return startTime
+	}
+
+	return maxTimeInt
+
 }

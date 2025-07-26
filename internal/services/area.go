@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func AreaProcessor(ctx context.Context, groupCode string, mongoClient *mongo.Client, log *zap.Logger) (map[string]float64, error) {
+func AreaProcessor(ctx context.Context, groupCode string, mongoClient *mongo.Client, log *zap.Logger, currentMaxTime int) (map[string]float64, error) {
 	areaForEachUser := make(map[string]float64)
 
-	polygonData, err := getPolygonDataFromMongo(ctx, mongoClient, groupCode, log)
+	polygonData, err := getPolygonDataFromMongo(ctx, mongoClient, groupCode, log, currentMaxTime)
 	if err != nil {
 		log.Error("Failed to get polygon data from mongo", zap.Error(err))
 		return nil, err

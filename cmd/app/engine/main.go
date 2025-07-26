@@ -36,6 +36,6 @@ func main() {
 func Invoke(redisClient *redis.Client, server *gin.Engine, config *serverconfig.Config, log *zap.Logger, ctx context.Context, amqpconfig *amqpconfig.AmqpConfig, mongoClient *mongo.Client) {
 	go func() {
 		log.Info("Starting Audit Consumer")
-		services.PersistAuditData(ctx, amqpconfig, mongoClient, log)
+		services.PersistAuditData(ctx, amqpconfig, mongoClient, log, redisClient)
 	}()
 }

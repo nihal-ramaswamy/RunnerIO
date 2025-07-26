@@ -10,12 +10,20 @@ import (
 	"go.uber.org/zap"
 )
 
-func getLiveLinesDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger) ([]dtoschema.LiveLinesData, error) {
-	return getData[dtoschema.LiveLinesData](ctx, mongoClient, groupCode, log, constants.RUNNER_LIVE_LINES_COLLECTION)
+func putLiveLinesDataToMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger, liveLinesData []dtoschema.LiveLinesData) ([]interface{}, error) {
+	return putData[dtoschema.LiveLinesData](ctx, mongoClient, groupCode, log, constants.RUNNER_LIVE_LINES_COLLECTION, liveLinesData)
 }
 
-func getPolygonDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger) ([]dtoschema.PolygonData, error) {
-	return getData[dtoschema.PolygonData](ctx, mongoClient, groupCode, log, constants.RUNNER_POLYGON_COLLECTION)
+func putPolygonDataToMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger, polygonData []dtoschema.PolygonData) ([]interface{}, error) {
+	return putData[dtoschema.PolygonData](ctx, mongoClient, groupCode, log, constants.RUNNER_POLYGON_COLLECTION, polygonData)
+}
+
+func getLiveLinesDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger, currentMaxTime int) ([]dtoschema.LiveLinesData, error) {
+	return getData[dtoschema.LiveLinesData](ctx, mongoClient, groupCode, log, constants.RUNNER_LIVE_LINES_COLLECTION, currentMaxTime)
+}
+
+func getPolygonDataFromMongo(ctx context.Context, mongoClient *mongo.Client, groupCode string, log *zap.Logger, currentMaxTime int) ([]dtoschema.PolygonData, error) {
+	return getData[dtoschema.PolygonData](ctx, mongoClient, groupCode, log, constants.RUNNER_POLYGON_COLLECTION, currentMaxTime)
 }
 
 func segregatePointsByUser(liveLinesData []dtoschema.LiveLinesData) map[string][]dtoschema.LiveLinesData {

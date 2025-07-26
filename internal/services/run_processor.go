@@ -5,16 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
+	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
 
 /*
-RunProcessorOnGroup reads the live lines data from the database.
+RunProcessorOnGroup reads the live lines data and the polygon data from the database.
+It reads only the latest data for each collection. It does this by keeping track of the max inserted time for each collection.
+If the max inserted time is less than the current time, it skips the collection.
+If the max inserted time is missing or unable to read, it reads the entire collection and takes only the latest data.
 It uses the live lines data to create the polygons.
 Once it processes, it updates the polygons in the database and updates the live lines data in the database.
 It then publishes the processed data to the rabbitmq queue with the group code as the routing key.
@@ -24,14 +30,16 @@ func RunProcessorOnGroup(
 	groupCode string,
 	mongoClient *mongo.Client,
 	amqpconfig *amqpconfig.AmqpConfig,
-	log *zap.Logger) error {
-	
-	liveLinesData, err := getLiveLinesDataFromMongo(ctx, mongoClient, groupCode, log)
+	log *zap.Logger,
+	redisClient *redis.Client) error {
+
+	currentMaxTime := getCurrentMaxTime(ctx, redisClient, groupCode, log)
+	liveLinesData, err := getLiveLinesDataFromMongo(ctx, mongoClient, groupCode, log, currentMaxTime)
 	if err != nil {
 		return fmt.Errorf("Failed to get live lines data from mongo: %s", err)
 	}
 
-	polygonData, err := getPolygonDataFromMongo(ctx, mongoClient, groupCode, log)
+	polygonData, err := getPolygonDataFromMongo(ctx, mongoClient, groupCode, log, currentMaxTime)
 	if err != nil {
 		return fmt.Errorf("Failed to get polygon data from mongo: %s", err)
 	}
@@ -46,6 +54,56 @@ func RunProcessorOnGroup(
 	finalLiveLinesData, finalPolygonData, err := processData(liveLinesData, polygonData, runProcessorConfig)
 	if err != nil {
 		return fmt.Errorf("Failed to process data: %s", err)
+	}
+
+	currentMaxTime = time.Now().Nanosecond()
+	for _, liveLines := range finalLiveLinesData {
+		liveLines.InsertedTime = currentMaxTime
+	}
+	for _, polygonData := range finalPolygonData {
+		polygonData.InsertedTime = currentMaxTime
+	}
+
+	// Add data into mongodb
+	var wg sync.WaitGroup
+	wg.Add(1)
+	result := make(chan error)
+
+	go func(result chan<- error) {
+		defer wg.Done()
+		session, err := mongoClient.StartSession()
+		if err != nil {
+			result <- fmt.Errorf("Failed to start session: %s", err)
+		}
+		defer session.EndSession(ctx)
+
+		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			return putLiveLinesDataToMongo(ctx, mongoClient, groupCode, log, finalLiveLinesData)
+		})
+
+		if err != nil {
+			result <- fmt.Errorf("Failed to put data to mongo: %s", err)
+			return
+		}
+
+		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			return putPolygonDataToMongo(ctx, mongoClient, groupCode, log, finalPolygonData)
+		})
+		if err != nil {
+			result <- fmt.Errorf("Failed to put data to mongo: %s", err)
+			return
+		}
+
+		result <- nil
+	}(result)
+
+	wg.Wait()
+
+	redisClient.Set(ctx, fmt.Sprintf("%s:%s", constants.REDIS_CURRENT_MAX_TIME, groupCode), currentMaxTime, 0)
+
+	if err := <-result; err != nil {
+		log.Error("Failed to put data to mongo", zap.Error(err))
+		return fmt.Errorf("Failed to put data to mongo: %s", err)
 	}
 
 	finalData := dtoschema.RunnerResponse{

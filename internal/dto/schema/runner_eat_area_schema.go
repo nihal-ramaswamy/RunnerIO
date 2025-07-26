@@ -12,7 +12,11 @@ type PolygonData struct {
 	Coords       []CoordinateStruct `json:"coordinates"`
 	Runner       string             `json:"runner"`
 	Time         time.Time          `json:"time"`
-	InsertedTime time.Time          `json:"inserted_time"`
+	InsertedTime int                `json:"inserted_time"`
+}
+
+func (polygonData PolygonData) GetInsertedTime() int {
+	return polygonData.InsertedTime
 }
 
 type userData struct {

@@ -8,7 +8,11 @@ type LiveLinesData struct {
 	Time         time.Time `json:"time" bson:"time"`
 	Sender       string    `json:"sender" bson:"sender"`
 	GroupCode    string    `json:"group_code" bson:"group_code"`
-	InsertedTime time.Time `json:"inserted_time" bson:"inserted_time"`
+	InsertedTime int       `json:"inserted_time" bson:"inserted_time"`
+}
+
+func (liveLinesData LiveLinesData) GetInsertedTime() int {
+	return liveLinesData.InsertedTime
 }
 
 func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {
@@ -34,4 +38,5 @@ func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {
 
 type TestGenerics interface {
 	LiveLinesData | PolygonData
+	GetInsertedTime() int
 }

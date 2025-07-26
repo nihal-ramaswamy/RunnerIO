@@ -8,6 +8,7 @@ import (
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
@@ -15,7 +16,7 @@ import (
 func PersistAuditData(
 	ctx context.Context,
 	amqpconfig *amqpconfig.AmqpConfig,
-	mongoClient *mongo.Client, log *zap.Logger) {
+	mongoClient *mongo.Client, log *zap.Logger, redisClient *redis.Client) {
 	msgs, err := amqpconfig.Channel.Consume(
 		constants.LIVE_LINES_QUEUE_NAME, // queue
 		"",                              // consumer
@@ -59,7 +60,7 @@ func PersistAuditData(
 			// Run Polygon processor
 			go func() {
 				defer wg.Done()
-				RunProcessorOnGroup(ctx, data.GroupCode, mongoClient, amqpconfig, log)
+				RunProcessorOnGroup(ctx, data.GroupCode, mongoClient, amqpconfig, log, redisClient)
 			}()
 
 			wg.Wait()

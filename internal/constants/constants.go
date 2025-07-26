@@ -54,4 +54,6 @@ const (
 	SERVER_PORT = "SERVER_PORT"
 	SERVICE     = "service"
 	ENGINE      = "engine"
+
+	REDIS_CURRENT_MAX_TIME = "currentMaxTime"
 )

@@ -3,6 +3,7 @@ package runner_api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
@@ -49,7 +50,8 @@ func (h *AreaCalculatorGroupHandler) Middlewares() []gin.HandlerFunc {
 func (h *AreaCalculatorGroupHandler) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Param("groupCode")
-		area, err := services.AreaProcessor(h.ctx, code, h.mongoClient, h.log)
+		currentMaxTime := time.Unix(0, 0).Nanosecond()
+		area, err := services.AreaProcessor(h.ctx, code, h.mongoClient, h.log, currentMaxTime)
 		utils.FailIfError(err, c, h.log, http.StatusInternalServerError, "failed to calculate area")
 
 		c.JSON(http.StatusAccepted, area)
