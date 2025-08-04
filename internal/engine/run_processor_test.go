@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 )
 
 func distanceForTest(lat1 float64, lng1 float64, lat2 float64, lng2 float64) float64 {
@@ -19,7 +19,7 @@ func getRunProcessorConfig() RunProcessorConfig {
 	return NewRunProcessorConfig(distanceForTest, false, 0, 3)
 }
 
-func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
+func sortCoordsFunc(a, b []mongo_schema.CoordinateStruct) int {
 	if a[0].X < b[0].X {
 		return -1
 	}
@@ -29,7 +29,7 @@ func sortCoordsFunc(a, b []dtoschema.CoordinateStruct) int {
 	return 0
 }
 
-func sortCoordsFunc2(a, b dtoschema.CoordinateStruct) int {
+func sortCoordsFunc2(a, b mongo_schema.CoordinateStruct) int {
 	if a.X < b.X {
 		return -1
 	}
@@ -39,7 +39,7 @@ func sortCoordsFunc2(a, b dtoschema.CoordinateStruct) int {
 	return 0
 }
 
-func checkIfCoordsEqual(result, expected []dtoschema.CoordinateStruct) bool {
+func checkIfCoordsEqual(result, expected []mongo_schema.CoordinateStruct) bool {
 	if len(result) != len(expected) {
 		return false
 	}
@@ -52,17 +52,17 @@ func checkIfCoordsEqual(result, expected []dtoschema.CoordinateStruct) bool {
 	return true
 }
 
-func checkIfEqualPolygonData(result, expected []dtoschema.PolygonData) bool {
+func checkIfEqualPolygonData(result, expected []mongo_schema.RunnerPolygonSchema) bool {
 	if len(result) != len(expected) {
 		fmt.Printf("Expected %v, got %v\n", len(expected), len(result))
 		return false
 	}
 
-	resultToRunnerMap := make(map[string][][]dtoschema.CoordinateStruct)
+	resultToRunnerMap := make(map[string][][]mongo_schema.CoordinateStruct)
 	for _, resultPolygon := range result {
 		resultToRunnerMap[resultPolygon.Runner] = append(resultToRunnerMap[resultPolygon.Runner], resultPolygon.Coords)
 	}
-	expectedToRunnerMap := make(map[string][][]dtoschema.CoordinateStruct)
+	expectedToRunnerMap := make(map[string][][]mongo_schema.CoordinateStruct)
 	for _, expectedPolygon := range expected {
 		expectedToRunnerMap[expectedPolygon.Runner] = append(expectedToRunnerMap[expectedPolygon.Runner], expectedPolygon.Coords)
 	}
@@ -93,22 +93,22 @@ func checkIfEqualPolygonData(result, expected []dtoschema.PolygonData) bool {
 	return true
 }
 
-func checkIfEqualLiveLinesData(result, expected []dtoschema.LiveLinesData) bool {
+func checkIfEqualLiveLinesData(result, expected []mongo_schema.RunnerLiveLinesData) bool {
 	if len(result) != len(expected) {
 		return false
 	}
 
-	resultToRunnerMap := make(map[string][]dtoschema.CoordinateStruct)
-	expectedToRunnerMap := make(map[string][]dtoschema.CoordinateStruct)
+	resultToRunnerMap := make(map[string][]mongo_schema.CoordinateStruct)
+	expectedToRunnerMap := make(map[string][]mongo_schema.CoordinateStruct)
 
 	for _, resultPolygon := range result {
-		resultToRunnerMap[resultPolygon.Sender] = append(resultToRunnerMap[resultPolygon.Sender], dtoschema.CoordinateStruct{
+		resultToRunnerMap[resultPolygon.Sender] = append(resultToRunnerMap[resultPolygon.Sender], mongo_schema.CoordinateStruct{
 			X: resultPolygon.X,
 			Y: resultPolygon.Y,
 		})
 	}
 	for _, expectedPolygon := range expected {
-		expectedToRunnerMap[expectedPolygon.Sender] = append(expectedToRunnerMap[expectedPolygon.Sender], dtoschema.CoordinateStruct{
+		expectedToRunnerMap[expectedPolygon.Sender] = append(expectedToRunnerMap[expectedPolygon.Sender], mongo_schema.CoordinateStruct{
 			X: expectedPolygon.X,
 			Y: expectedPolygon.Y,
 		})
@@ -137,9 +137,9 @@ func checkIfEqualLiveLinesData(result, expected []dtoschema.LiveLinesData) bool 
 	return true
 }
 
-func addToLiveLinesData(liveLinesData *[]dtoschema.LiveLinesData, X, Y float64, sender string) {
+func addToLiveLinesData(liveLinesData *[]mongo_schema.RunnerLiveLinesData, X, Y float64, sender string) {
 	currentTime := time.Now()
-	newLiveLines := dtoschema.LiveLinesData{
+	newLiveLines := mongo_schema.RunnerLiveLinesData{
 		X:         X,
 		Y:         Y,
 		Time:      currentTime,
@@ -149,7 +149,7 @@ func addToLiveLinesData(liveLinesData *[]dtoschema.LiveLinesData, X, Y float64, 
 	*liveLinesData = append(*liveLinesData, newLiveLines)
 }
 
-func prettyPrint(val string, data []dtoschema.PolygonData) {
+func prettyPrint(val string, data []mongo_schema.RunnerPolygonSchema) {
 	fmt.Println(val)
 	for _, polygon := range data {
 		fmt.Println("Runner: " + polygon.Runner)
@@ -159,7 +159,7 @@ func prettyPrint(val string, data []dtoschema.PolygonData) {
 	}
 }
 
-func prettyPrint2(val string, data []dtoschema.LiveLinesData) {
+func prettyPrint2(val string, data []mongo_schema.RunnerLiveLinesData) {
 	fmt.Println(val)
 	for _, polygon := range data {
 		fmt.Printf("Runner: %v, X: %v, Y: %v\n", polygon.Sender, polygon.X, polygon.Y)
@@ -170,7 +170,7 @@ func prettyPrint2(val string, data []dtoschema.LiveLinesData) {
 // The first runner has a live path. The second runner has a live path.
 // The second runner eats into the first runner's live path
 func TestEatPolygon1(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
@@ -189,14 +189,14 @@ func TestEatPolygon1(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 6.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 6.0, 6.0, "nihal1")
 
-	_, result, err := processData(liveLinesData, []dtoschema.PolygonData{}, getRunProcessorConfig())
+	_, result, err := processData(liveLinesData, []mongo_schema.RunnerPolygonSchema{}, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+	expected := []mongo_schema.RunnerPolygonSchema{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 0.0},
 			{X: 4.0, Y: 2.0},
 			{X: 4.0, Y: 4.0},
@@ -206,7 +206,7 @@ func TestEatPolygon1(t *testing.T) {
 			{X: 0.0, Y: 2.0},
 			{X: 2.0, Y: 0.0},
 		}},
-		{Runner: "nihal1", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal1", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 4.0},
 			{X: 4.0, Y: 2.0},
 			{X: 6.0, Y: 0.0},
@@ -227,7 +227,7 @@ func TestEatPolygon1(t *testing.T) {
 
 // Only a single runner with a live path and a polygon. The polygon and the live path intersect.
 func TestEatPolygon2(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
@@ -237,10 +237,10 @@ func TestEatPolygon2(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 0.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 2.0, 0.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
-	p1 := dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 4.0},
 			{X: 4.0, Y: 2.0},
 			{X: 6.0, Y: 0.0},
@@ -259,8 +259,8 @@ func TestEatPolygon2(t *testing.T) {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+	expected := []mongo_schema.RunnerPolygonSchema{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 6.0, Y: 0.0},
 			{X: 8.0, Y: 0.0},
 			{X: 10.0, Y: 2.0},
@@ -286,7 +286,7 @@ func TestEatPolygon2(t *testing.T) {
 // Only a single runner with a live path and a polygon.
 // The polygon and the live path do not intersect.
 func TestEatPolygon3(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
@@ -296,10 +296,10 @@ func TestEatPolygon3(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 0.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 2.0, 0.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
-	p1 := dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 8.0, Y: 0.0},
 			{X: 10.0, Y: 2.0},
 			{X: 10.0, Y: 4.0},
@@ -314,14 +314,14 @@ func TestEatPolygon3(t *testing.T) {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+	expected := []mongo_schema.RunnerPolygonSchema{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 8.0, Y: 0.0},
 			{X: 10.0, Y: 2.0},
 			{X: 10.0, Y: 4.0},
 			{X: 8.0, Y: 6.0},
 		}},
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 0.0},
 			{X: 6.0, Y: 2.0},
 			{X: 6.0, Y: 4.0},
@@ -344,7 +344,7 @@ func TestEatPolygon3(t *testing.T) {
 // The second runner has no polygon and a live path
 // The second runner eats into the first runner's live path
 func TestEatPolygon4(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
@@ -363,10 +363,10 @@ func TestEatPolygon4(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 6.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 6.0, 6.0, "nihal1")
 
-	polygonData := []dtoschema.PolygonData{}
-	p1 := dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: -8.0, Y: 0.0},
 			{X: -10.0, Y: -2.0},
 			{X: -10.0, Y: -4.0},
@@ -381,8 +381,8 @@ func TestEatPolygon4(t *testing.T) {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+	expected := []mongo_schema.RunnerPolygonSchema{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 0.0},
 			{X: 4.0, Y: 2.0},
 			{X: 4.0, Y: 4.0},
@@ -392,7 +392,7 @@ func TestEatPolygon4(t *testing.T) {
 			{X: 0.0, Y: 2.0},
 			{X: 2.0, Y: 0.0},
 		}},
-		{Runner: "nihal1", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal1", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 4.0},
 			{X: 4.0, Y: 2.0},
 			{X: 6.0, Y: 0.0},
@@ -402,7 +402,7 @@ func TestEatPolygon4(t *testing.T) {
 			{X: 8.0, Y: 6.0},
 			{X: 6.0, Y: 6.0},
 		}},
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: -8.0, Y: 0.0},
 			{X: -10.0, Y: -2.0},
 			{X: -10.0, Y: -4.0},
@@ -421,7 +421,7 @@ func TestEatPolygon4(t *testing.T) {
 // The polygons intersect
 // The live paths intersect
 func TestEatPolygon5(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
@@ -440,10 +440,10 @@ func TestEatPolygon5(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 6.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 6.0, 6.0, "nihal1")
 
-	polygonData := []dtoschema.PolygonData{}
-	p1 := dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 12.0, Y: 2.0},
 			{X: 14.0, Y: 2.0},
 			{X: 16.0, Y: 2.0},
@@ -456,9 +456,9 @@ func TestEatPolygon5(t *testing.T) {
 		Time: time.Now().Add(time.Second * -1),
 	}
 
-	p2 := dtoschema.PolygonData{
+	p2 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal1",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 14.0, Y: 4.0},
 			{X: 16.0, Y: 4.0},
 			{X: 18.0, Y: 4.0},
@@ -478,8 +478,8 @@ func TestEatPolygon5(t *testing.T) {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+	expected := []mongo_schema.RunnerPolygonSchema{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 0.0},
 			{X: 4.0, Y: 2.0},
 			{X: 4.0, Y: 4.0},
@@ -489,7 +489,7 @@ func TestEatPolygon5(t *testing.T) {
 			{X: 0.0, Y: 2.0},
 			{X: 2.0, Y: 0.0},
 		}},
-		{Runner: "nihal1", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal1", Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 4.0},
 			{X: 4.0, Y: 2.0},
 			{X: 6.0, Y: 0.0},
@@ -499,7 +499,7 @@ func TestEatPolygon5(t *testing.T) {
 			{X: 8.0, Y: 6.0},
 			{X: 6.0, Y: 6.0},
 		}},
-		{Runner: "nihal1", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal1", Coords: []mongo_schema.CoordinateStruct{
 			{X: 14.0, Y: 4.0},
 			{X: 16.0, Y: 4.0},
 			{X: 18.0, Y: 4.0},
@@ -509,7 +509,7 @@ func TestEatPolygon5(t *testing.T) {
 			{X: 14.0, Y: 8.0},
 			{X: 14.0, Y: 6.0},
 		}},
-		{Runner: "nihal", Coords: []dtoschema.CoordinateStruct{
+		{Runner: "nihal", Coords: []mongo_schema.CoordinateStruct{
 			{X: 12.0, Y: 2.0},
 			{X: 14.0, Y: 2.0},
 			{X: 16.0, Y: 2.0},
@@ -528,20 +528,20 @@ func TestEatPolygon5(t *testing.T) {
 
 // One runner, no polygon, one live path that does not form a polygon
 func TestEatPolygon6(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 4.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 4.0, 6.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{}
+	expected := []mongo_schema.RunnerPolygonSchema{}
 	if !checkIfEqualPolygonData(result, expected) {
 		prettyPrint("Expected: ", expected)
 		prettyPrint("Got: ", result)
@@ -553,7 +553,7 @@ func TestEatPolygon6(t *testing.T) {
 // Live path 1 intersects with live path 2
 // Live path 2 intersects with live path 3
 func TestEatPolygon7(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, 1.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 2.0, 0.0, "nihal")
@@ -624,17 +624,17 @@ func TestEatPolygon7(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 2.0, "nihal2")
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal2",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 8.0, Y: 0.0},
 				{X: 9.0, Y: 0.0},
 				{X: 10.0, Y: 0.0},
@@ -661,7 +661,7 @@ func TestEatPolygon7(t *testing.T) {
 		},
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 4.0, Y: 0.0},
 				{X: 5.0, Y: 0.0},
 				{X: 6.0, Y: 0.0},
@@ -684,7 +684,7 @@ func TestEatPolygon7(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 1.0, Y: 0.0},
 				{X: 2.0, Y: 0.0},
 				{X: 3.0, Y: 0.0},
@@ -715,7 +715,7 @@ func TestEatPolygon7(t *testing.T) {
 // Two overlapping live paths, one does not
 // No polygons
 func TestEatPolygon8(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, -1.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, -2.0, 0.0, "nihal")
@@ -786,17 +786,17 @@ func TestEatPolygon8(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 2.0, "nihal2")
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal2",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 8.0, Y: 0.0},
 				{X: 9.0, Y: 0.0},
 				{X: 10.0, Y: 0.0},
@@ -823,7 +823,7 @@ func TestEatPolygon8(t *testing.T) {
 		},
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 4.0, Y: 0.0},
 				{X: 5.0, Y: 0.0},
 				{X: 6.0, Y: 0.0},
@@ -846,7 +846,7 @@ func TestEatPolygon8(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: -1.0, Y: 0.0},
 				{X: -2.0, Y: 0.0},
 				{X: -3.0, Y: 0.0},
@@ -881,7 +881,7 @@ func TestEatPolygon8(t *testing.T) {
 
 // Same as TestEatPolygon8, but with a different order of runners
 func TestEatPolygon9(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 5.0, 0.0, "nihal1")
@@ -929,17 +929,17 @@ func TestEatPolygon9(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 1.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 1.0, 1.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 7.0, Y: 0.0},
 				{X: 8.0, Y: 0.0},
 				{X: 9.0, Y: 0.0},
@@ -960,7 +960,7 @@ func TestEatPolygon9(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 1.0, Y: 0.0},
 				{X: 2.0, Y: 0.0},
 				{X: 3.0, Y: 0.0},
@@ -996,7 +996,7 @@ func TestEatPolygon9(t *testing.T) {
 // Three runners
 // Two runners overlap the same runner
 func TestEatPolygon10(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 5.0, 0.0, "nihal1")
@@ -1067,17 +1067,17 @@ func TestEatPolygon10(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 8.0, 2.0, "nihal2")
 	addToLiveLinesData(&liveLinesData, 8.0, 1.0, "nihal2")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal2",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 8.0, Y: 0.0},
 				{X: 9.0, Y: 0.0},
 				{X: 10.0, Y: 0.0},
@@ -1104,7 +1104,7 @@ func TestEatPolygon10(t *testing.T) {
 		},
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 7.0, Y: 0.0},
 				{X: 8.0, Y: 1.0},
 				{X: 8.0, Y: 2.0},
@@ -1121,7 +1121,7 @@ func TestEatPolygon10(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 1.0, Y: 0.0},
 				{X: 2.0, Y: 0.0},
 				{X: 3.0, Y: 0.0},
@@ -1157,7 +1157,7 @@ func TestEatPolygon10(t *testing.T) {
 // Two runners
 // Only overlap one a line
 func TestEatPolygon11(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, 6.0, 0.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 7.0, 0.0, "nihal1")
@@ -1201,17 +1201,17 @@ func TestEatPolygon11(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 1.0, 2.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 1.0, 1.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 7.0, Y: 0.0},
 				{X: 8.0, Y: 0.0},
 				{X: 9.0, Y: 0.0},
@@ -1227,7 +1227,7 @@ func TestEatPolygon11(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 1.0, Y: 0.0},
 				{X: 2.0, Y: 0.0},
 				{X: 3.0, Y: 0.0},
@@ -1263,7 +1263,7 @@ func TestEatPolygon11(t *testing.T) {
 // Two runners
 // Only overlap one a point
 func TestEatPolygon12(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	addToLiveLinesData(&liveLinesData, 9.0, 6.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 10.0, 6.0, "nihal")
@@ -1303,17 +1303,17 @@ func TestEatPolygon12(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 6.0, 2.0, "nihal1")
 	addToLiveLinesData(&liveLinesData, 6.0, 1.0, "nihal1")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 	_, result, err := processData(liveLinesData, polygonData, getRunProcessorConfig())
 
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
 
-	expected := []dtoschema.PolygonData{
+	expected := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 6.0, Y: 0.0},
 				{X: 7.0, Y: 0.0},
 				{X: 8.0, Y: 0.0},
@@ -1336,7 +1336,7 @@ func TestEatPolygon12(t *testing.T) {
 		},
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 10.0, Y: 6.0},
 				{X: 11.0, Y: 6.0},
 				{X: 12.0, Y: 6.0},
@@ -1367,7 +1367,7 @@ func TestEatPolygon12(t *testing.T) {
 // Two runners
 // One has polygon, the other has a live path partially overlapping the polygon
 func TestEatPolygon13(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 4.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 5.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 6.0, 0.0, "nihal")
@@ -1376,11 +1376,11 @@ func TestEatPolygon13(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 9.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 10.0, 0.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 
-	p1 := dtoschema.PolygonData{
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal1",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 6.0},
 			{X: 5.0, Y: 6.0},
 			{X: 7.0, Y: 6.0},
@@ -1412,10 +1412,10 @@ func TestEatPolygon13(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
-	expectedPolygonData := []dtoschema.PolygonData{
+	expectedPolygonData := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 4.0, Y: 6.0},
 				{X: 5.0, Y: 6.0},
 				{X: 7.0, Y: 6.0},
@@ -1442,7 +1442,7 @@ func TestEatPolygon13(t *testing.T) {
 			},
 		},
 	}
-	expectedLiveLineData := []dtoschema.LiveLinesData{
+	expectedLiveLineData := []mongo_schema.RunnerLiveLinesData{
 		{X: 8.0, Y: 0.0, Sender: "nihal"},
 		{X: 9.0, Y: 0.0, Sender: "nihal"},
 		{X: 10.0, Y: 0.0, Sender: "nihal"},
@@ -1464,7 +1464,7 @@ func TestEatPolygon13(t *testing.T) {
 // Two runners
 // One has polygon, the other has a live path partially overlapping the polygon
 func TestEatPolygon14(t *testing.T) {
-	liveLinesData := []dtoschema.LiveLinesData{}
+	liveLinesData := []mongo_schema.RunnerLiveLinesData{}
 	addToLiveLinesData(&liveLinesData, 1.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 2.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 3.0, 0.0, "nihal")
@@ -1476,11 +1476,11 @@ func TestEatPolygon14(t *testing.T) {
 	addToLiveLinesData(&liveLinesData, 9.0, 0.0, "nihal")
 	addToLiveLinesData(&liveLinesData, 10.0, 0.0, "nihal")
 
-	polygonData := []dtoschema.PolygonData{}
+	polygonData := []mongo_schema.RunnerPolygonSchema{}
 
-	p1 := dtoschema.PolygonData{
+	p1 := mongo_schema.RunnerPolygonSchema{
 		Runner: "nihal1",
-		Coords: []dtoschema.CoordinateStruct{
+		Coords: []mongo_schema.CoordinateStruct{
 			{X: 4.0, Y: 6.0},
 			{X: 5.0, Y: 6.0},
 			{X: 7.0, Y: 6.0},
@@ -1512,10 +1512,10 @@ func TestEatPolygon14(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to process data: %s", err)
 	}
-	expectedPolygonData := []dtoschema.PolygonData{
+	expectedPolygonData := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal1",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 4.0, Y: 6.0},
 				{X: 5.0, Y: 6.0},
 				{X: 7.0, Y: 6.0},
@@ -1542,7 +1542,7 @@ func TestEatPolygon14(t *testing.T) {
 			},
 		},
 	}
-	expectedLiveLineData := []dtoschema.LiveLinesData{
+	expectedLiveLineData := []mongo_schema.RunnerLiveLinesData{
 		{X: 8.0, Y: 0.0, Sender: "nihal"},
 		{X: 9.0, Y: 0.0, Sender: "nihal"},
 		{X: 10.0, Y: 0.0, Sender: "nihal"},
@@ -1560,3 +1560,9 @@ func TestEatPolygon14(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expectedLiveLineData, actualLiveLineData)
 	}
 }
+
+// Two groups running in parallel
+// Groups do not intersect
+
+// Two groups running in parallel
+// Groups intersect

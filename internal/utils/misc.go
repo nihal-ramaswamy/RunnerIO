@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -44,4 +44,8 @@ func FailIfError(err error, c *gin.Context, log *zap.Logger, code int, message s
 
 	log.Error(message, fields...)
 	c.AbortWithError(code, err)
+}
+
+func GetRedisKeyForLastInsertTime(groupCode string) string {
+	return constants.REDIS_CURRENT_MAX_TIME + ":" + groupCode
 }

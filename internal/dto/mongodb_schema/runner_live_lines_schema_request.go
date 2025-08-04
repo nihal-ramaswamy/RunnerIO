@@ -1,4 +1,4 @@
-package dtoschema
+package mongo_schema
 
 import "time"
 
@@ -9,8 +9,8 @@ type RunnerLiveLinesSchemaRequest struct {
 	GroupCode string  `json:"group_code"`
 }
 
-func (r *RunnerLiveLinesSchemaRequest) ToRunnerLiveLinesSchema(sender string) *LiveLinesData {
-	return &LiveLinesData{
+func (r *RunnerLiveLinesSchemaRequest) ToRunnerLiveLinesSchema(sender string) *RunnerLiveLinesData {
+	return &RunnerLiveLinesData{
 		X:         r.X,
 		Y:         r.Y,
 		Time:      time.UnixMilli(r.Time),

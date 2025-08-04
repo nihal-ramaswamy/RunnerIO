@@ -9,8 +9,8 @@ import (
 	"time"
 
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
-	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
+	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -59,9 +59,11 @@ func RunProcessorOnGroup(
 	currentMaxTime = time.Now().Nanosecond()
 	for _, liveLines := range finalLiveLinesData {
 		liveLines.InsertedTime = currentMaxTime
+		liveLines.GroupCode = groupCode
 	}
 	for _, polygonData := range finalPolygonData {
 		polygonData.InsertedTime = currentMaxTime
+		polygonData.GroupCode = groupCode
 	}
 
 	// Add data into mongodb
@@ -77,7 +79,7 @@ func RunProcessorOnGroup(
 		}
 		defer session.EndSession(ctx)
 
-		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (any, error) {
 			return putLiveLinesDataToMongo(ctx, mongoClient, groupCode, log, finalLiveLinesData)
 		})
 
@@ -86,7 +88,7 @@ func RunProcessorOnGroup(
 			return
 		}
 
-		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+		_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (any, error) {
 			return putPolygonDataToMongo(ctx, mongoClient, groupCode, log, finalPolygonData)
 		})
 		if err != nil {
@@ -99,14 +101,14 @@ func RunProcessorOnGroup(
 
 	wg.Wait()
 
-	redisClient.Set(ctx, fmt.Sprintf("%s:%s", constants.REDIS_CURRENT_MAX_TIME, groupCode), currentMaxTime, 0)
+	redisClient.Set(ctx, utils.GetRedisKeyForLastInsertTime(groupCode), currentMaxTime, 0)
 
 	if err := <-result; err != nil {
 		log.Error("Failed to put data to mongo", zap.Error(err))
 		return fmt.Errorf("Failed to put data to mongo: %s", err)
 	}
 
-	finalData := dtoschema.RunnerResponse{
+	finalData := mongo_schema.RunnerResponse{
 		Polygons:  finalPolygonData,
 		LiveLines: finalLiveLinesData,
 	}
@@ -132,9 +134,9 @@ It does so by checking the point inserted in the db is before the polygon was fo
 It checks this for every polygon and every live line point.
 */
 func processData(
-	liveLinesData []dtoschema.LiveLinesData,
-	polygonData []dtoschema.PolygonData,
-	runProcessorConfig RunProcessorConfig) ([]dtoschema.LiveLinesData, []dtoschema.PolygonData, error) {
+	liveLinesData []mongo_schema.RunnerLiveLinesData,
+	polygonData []mongo_schema.RunnerPolygonSchema,
+	runProcessorConfig RunProcessorConfig) ([]mongo_schema.RunnerLiveLinesData, []mongo_schema.RunnerPolygonSchema, error) {
 	// Get polygons that are formed by the live lines per user. Sort it be time in latest to oldest order
 
 	// Step 1: Segregate the points
@@ -161,7 +163,7 @@ func processData(
  * Any point by that runner which occurs before the time of entry is removed from the live lines data.
  * Do this for every runner.
  */
-func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, polygons []dtoschema.PolygonData) []dtoschema.LiveLinesData {
+func removePointsFromLiveLinesData(liveLinesData []mongo_schema.RunnerLiveLinesData, polygons []mongo_schema.RunnerPolygonSchema) []mongo_schema.RunnerLiveLinesData {
 	mapLastPointBeforeDeletion := make(map[string]time.Time)
 
 	for _, liveLinesData := range liveLinesData {
@@ -175,7 +177,7 @@ func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, poly
 			}
 		}
 
-		point := dtoschema.CoordinateStruct{
+		point := mongo_schema.CoordinateStruct{
 			X: liveLinesData.X,
 			Y: liveLinesData.Y,
 		}
@@ -197,7 +199,7 @@ func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, poly
 		}
 	}
 
-	newLiveLinesData := []dtoschema.LiveLinesData{}
+	newLiveLinesData := []mongo_schema.RunnerLiveLinesData{}
 
 	for _, liveLinesData := range liveLinesData {
 		runner := liveLinesData.Sender
@@ -217,9 +219,9 @@ func removePointsFromLiveLinesData(liveLinesData []dtoschema.LiveLinesData, poly
 cleanPolygons removes overlapping sections of older polygons.
 Merge polygons ran by the same user.
 */
-func cleanPolygons(polygons []dtoschema.PolygonData) []dtoschema.PolygonData {
-	cleanedPolygons := []dtoschema.PolygonData{}
-	slices.SortFunc(polygons, func(a, b dtoschema.PolygonData) int {
+func cleanPolygons(polygons []mongo_schema.RunnerPolygonSchema) []mongo_schema.RunnerPolygonSchema {
+	cleanedPolygons := []mongo_schema.RunnerPolygonSchema{}
+	slices.SortFunc(polygons, func(a, b mongo_schema.RunnerPolygonSchema) int {
 		return b.Time.Compare(a.Time)
 	})
 
@@ -234,7 +236,7 @@ func cleanPolygons(polygons []dtoschema.PolygonData) []dtoschema.PolygonData {
 		cleanedPolygons = append(cleanedPolygons, polygon)
 	}
 
-	cleanedPolygonsMerged := make(map[string][]dtoschema.PolygonData)
+	cleanedPolygonsMerged := make(map[string][]mongo_schema.RunnerPolygonSchema)
 
 	for _, polygon := range cleanedPolygons {
 		runner := polygon.Runner
@@ -257,7 +259,7 @@ func cleanPolygons(polygons []dtoschema.PolygonData) []dtoschema.PolygonData {
 		}
 	}
 
-	cleanedPolygonsMergedList := []dtoschema.PolygonData{}
+	cleanedPolygonsMergedList := []mongo_schema.RunnerPolygonSchema{}
 	runners := make([]string, 0, len(cleanedPolygonsMerged))
 	for runner := range cleanedPolygonsMerged {
 		runners = append(runners, runner)
@@ -279,7 +281,7 @@ Remove the points from p1 that are inside p2.
 Add the points from p2 to p1.
 Insert it in sorted order. Sorted by distance from the last deleted point
 */
-func eatPolygon(p1 dtoschema.PolygonData, p2 dtoschema.PolygonData) dtoschema.PolygonData {
+func eatPolygon(p1 mongo_schema.RunnerPolygonSchema, p2 mongo_schema.RunnerPolygonSchema) mongo_schema.RunnerPolygonSchema {
 	pointsInP2, lastPointBeforeDeletion := getPointsInPolygon(p1.Coords, p2.Coords)
 	pointsInP1, _ := getPointsInPolygon(p2.Coords, p1.Coords)
 
@@ -287,7 +289,7 @@ func eatPolygon(p1 dtoschema.PolygonData, p2 dtoschema.PolygonData) dtoschema.Po
 		return p1
 	}
 
-	newPolygon := dtoschema.PolygonData{
+	newPolygon := mongo_schema.RunnerPolygonSchema{
 		Runner: p1.Runner,
 	}
 
@@ -316,7 +318,7 @@ func eatPolygon(p1 dtoschema.PolygonData, p2 dtoschema.PolygonData) dtoschema.Po
 
 	// Remove points from p1 that are inside p2
 	for _, point := range pointsInP2 {
-		newPolygon.Coords = slices.DeleteFunc(newPolygon.Coords, func(p dtoschema.CoordinateStruct) bool {
+		newPolygon.Coords = slices.DeleteFunc(newPolygon.Coords, func(p mongo_schema.CoordinateStruct) bool {
 			return point.X == p.X && point.Y == p.Y
 		})
 	}
@@ -329,7 +331,7 @@ mergePolygons merges two polygons into one.
 First it removes overlapping points from both input polygons.
 Then it adds the points together from both polygons in sorted order.
 */
-func mergePolygons(polygon1 dtoschema.PolygonData, polygon2 dtoschema.PolygonData) (dtoschema.PolygonData, bool) {
+func mergePolygons(polygon1 mongo_schema.RunnerPolygonSchema, polygon2 mongo_schema.RunnerPolygonSchema) (mongo_schema.RunnerPolygonSchema, bool) {
 	// Get points from P1 that are inside P2
 	pointsInPolygon2, _ := getPointsInPolygon(polygon1.Coords, polygon2.Coords)
 	// Get points from P2 that are inside P1
@@ -339,11 +341,11 @@ func mergePolygons(polygon1 dtoschema.PolygonData, polygon2 dtoschema.PolygonDat
 		return polygon1, false
 	}
 
-	newPolygon := dtoschema.PolygonData{
+	newPolygon := mongo_schema.RunnerPolygonSchema{
 		Runner: polygon1.Runner,
 	}
 
-	coords := make([]dtoschema.CoordinateStruct, 0)
+	coords := make([]mongo_schema.CoordinateStruct, 0)
 	for _, point := range polygon1.Coords {
 		coords = append(coords, point)
 	}
@@ -353,14 +355,14 @@ func mergePolygons(polygon1 dtoschema.PolygonData, polygon2 dtoschema.PolygonDat
 
 	// Remove points from polygon1 that are inside polygon2
 	for _, point := range pointsInPolygon2 {
-		coords = slices.DeleteFunc(coords, func(p dtoschema.CoordinateStruct) bool {
+		coords = slices.DeleteFunc(coords, func(p mongo_schema.CoordinateStruct) bool {
 			return point.X == p.X && point.Y == p.Y
 		})
 	}
 
 	// Remove points from polygon2 that are inside polygon1
 	for _, point := range pointsInPolygon1 {
-		coords = slices.DeleteFunc(coords, func(p dtoschema.CoordinateStruct) bool {
+		coords = slices.DeleteFunc(coords, func(p mongo_schema.CoordinateStruct) bool {
 			return point.X == p.X && point.Y == p.Y
 		})
 	}

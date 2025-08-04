@@ -1,8 +1,8 @@
-package dtoschema
+package mongo_schema
 
 import "time"
 
-type LiveLinesData struct {
+type RunnerLiveLinesData struct {
 	X            float64   `json:"x" bson:"x"`
 	Y            float64   `json:"y" bson:"y"`
 	Time         time.Time `json:"time" bson:"time"`
@@ -11,11 +11,21 @@ type LiveLinesData struct {
 	InsertedTime int       `json:"inserted_time" bson:"inserted_time"`
 }
 
-func (liveLinesData LiveLinesData) GetInsertedTime() int {
+func NewRunnerLiveLinesData(x, y float64, time time.Time, sender, groupCode string) RunnerLiveLinesData {
+	return RunnerLiveLinesData{
+		X:         x,
+		Y:         y,
+		Time:      time,
+		Sender:    sender,
+		GroupCode: groupCode,
+	}
+}
+
+func (liveLinesData RunnerLiveLinesData) GetInsertedTime() int {
 	return liveLinesData.InsertedTime
 }
 
-func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {
+func ToPolygonData(runnerLiveLinesSchema *[]RunnerLiveLinesData) RunnerPolygonSchema {
 	maxTime := (*runnerLiveLinesSchema)[len(*runnerLiveLinesSchema)-1].Time
 	coords := []CoordinateStruct{}
 	for _, liveLine := range *runnerLiveLinesSchema {
@@ -29,14 +39,9 @@ func ToPolygonData(runnerLiveLinesSchema *[]LiveLinesData) PolygonData {
 		}
 	}
 
-	return PolygonData{
+	return RunnerPolygonSchema{
 		Time:   maxTime,
 		Coords: coords,
 		Runner: (*runnerLiveLinesSchema)[0].Sender,
 	}
-}
-
-type TestGenerics interface {
-	LiveLinesData | PolygonData
-	GetInsertedTime() int
 }

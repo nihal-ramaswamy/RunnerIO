@@ -2,21 +2,21 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"slices"
 	"strconv"
 	"time"
 
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
+	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
 
-func putData[T dtoschema.TestGenerics](
+func putData[T dtoschema.MongoDataInterface](
 	ctx context.Context,
 	mongoClient *mongo.Client,
 	groupCode string,
@@ -39,7 +39,7 @@ func putData[T dtoschema.TestGenerics](
 
 }
 
-func getData[T dtoschema.TestGenerics](
+func getData[T dtoschema.MongoDataInterface](
 	ctx context.Context,
 	mongoClient *mongo.Client,
 	groupCode string,
@@ -125,7 +125,7 @@ isCycle checks if the live lines data forms a cycle.
 
 A cycle is formed when the first and last point of the live lines data are within a distance of half a meter and the time difference is more than 10 seconds.
 */
-func IsCycle(liveLines *[]dtoschema.LiveLinesData, runProcessorConfig *RunProcessorConfig) bool {
+func IsCycle(liveLines *[]dtoschema.RunnerLiveLinesData, runProcessorConfig *RunProcessorConfig) bool {
 	if len(*liveLines) < 2 {
 		return false
 	}
@@ -247,7 +247,7 @@ func isPointInPolygon(point dtoschema.CoordinateStruct, polygon []dtoschema.Coor
 
 func getCurrentMaxTime(ctx context.Context, redisClient *redis.Client, groupCode string, log *zap.Logger) int {
 	startTime := time.Unix(0, 0).Nanosecond()
-	key := fmt.Sprintf("%s:%s", constants.REDIS_CURRENT_MAX_TIME, groupCode)
+	key := utils.GetRedisKeyForLastInsertTime(groupCode)
 	maxTimeStr, err := redisClient.Get(ctx, key).Result()
 
 	if err != nil {

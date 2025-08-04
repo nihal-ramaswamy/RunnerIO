@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/dto"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -68,7 +68,7 @@ func (h *CreateRunnerGroupHandler) Handler() gin.HandlerFunc {
 		timeStamp := time.Now().UnixMilli()
 		code := utils.CreateCode(h.mongoClient, h.log)
 
-		data := dtoschema.RunnerGroupSchema{
+		data := mongo_schema.RunnerGroupSchema{
 			GroupName: name,
 			GroupCode: code,
 			CreatedAt: timeStamp,

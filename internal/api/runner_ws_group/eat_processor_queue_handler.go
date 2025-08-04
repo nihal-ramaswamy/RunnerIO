@@ -18,7 +18,7 @@ import (
 // @Summary Eat Processor Queue
 // @Description Join the websocket room for the group. Receives messages from the queue dedicated to the group.
 // @Tags Runner WS Group
-// @Message {object} dtoschema.RunnerResponse
+// @Message {object} mongo_schema.RunnerResponse
 // @Router /ws/eatProcessorQueue/{groupCode} [ws]
 type EatProcessorQueueHandler struct {
 	amqpConfig                    *amqpconfig.AmqpConfig

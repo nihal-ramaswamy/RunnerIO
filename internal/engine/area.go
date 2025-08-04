@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
@@ -32,7 +32,7 @@ func AreaProcessor(ctx context.Context, groupCode string, mongoClient *mongo.Cli
 }
 
 // Shoelace formula
-func getPolygonArea(coords []dtoschema.CoordinateStruct) float64 {
+func getPolygonArea(coords []mongo_schema.CoordinateStruct) float64 {
 	coords = sortPointsByDistance(coords)
 	area := 0.0
 

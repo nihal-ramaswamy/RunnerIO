@@ -3,14 +3,14 @@ package services
 import (
 	"testing"
 
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 )
 
 func TestArea1(t *testing.T) {
-	polygonData := []dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 0, Y: 0},
 				{X: 0, Y: 1},
 				{X: 1, Y: 1},
@@ -27,10 +27,10 @@ func TestArea1(t *testing.T) {
 }
 
 func TestArea2(t *testing.T) {
-	polygonData := []dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: 0, Y: 0},
 				{X: 1, Y: -1},
 				{X: 2, Y: 0},
@@ -51,10 +51,10 @@ func TestArea2(t *testing.T) {
 }
 
 func TestArea3(t *testing.T) {
-	polygonData := []dtoschema.PolygonData{
+	polygonData := []mongo_schema.RunnerPolygonSchema{
 		{
 			Runner: "nihal",
-			Coords: []dtoschema.CoordinateStruct{
+			Coords: []mongo_schema.CoordinateStruct{
 				{X: -2, Y: -2},
 				{X: 0, Y: 0},
 				{X: 0, Y: 2},

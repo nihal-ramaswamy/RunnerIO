@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/dto"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -59,7 +59,7 @@ func (h *JoinRunnerGroupHandler) Handler() gin.HandlerFunc {
 		collection := constants.RUNNER_GROUP_COLLECTION
 
 		filter := bson.M{"code": code}
-		var result dtoschema.RunnerGroupSchema
+		var result mongo_schema.RunnerGroupSchema
 		err := h.mongoClient.Database(constants.RUNNER_DATABASE).Collection(collection).FindOne(h.ctx, filter).Decode(&result)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)

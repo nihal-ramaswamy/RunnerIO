@@ -7,7 +7,7 @@ import (
 
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -32,7 +32,7 @@ func PersistAuditData(
 	}
 
 	forever := make(chan struct{})
-	var data dtoschema.LiveLinesData
+	var data mongo_schema.RunnerLiveLinesData
 
 	var wg sync.WaitGroup
 

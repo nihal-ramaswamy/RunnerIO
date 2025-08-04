@@ -1,4 +1,4 @@
-package dtoschema
+package mongo_schema
 
 type RunnerGroupSchema struct {
 	GroupName string   `json:"group_name"`

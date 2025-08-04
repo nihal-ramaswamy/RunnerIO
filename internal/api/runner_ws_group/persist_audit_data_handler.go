@@ -10,7 +10,7 @@ import (
 	amqpconfig "github.com/nihal-ramaswamy/RunnerIO/internal/config/amqp"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/constants"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/dto"
-	dtoschema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/schema"
+	mongo_schema "github.com/nihal-ramaswamy/RunnerIO/internal/dto/mongodb_schema"
 	wsdto "github.com/nihal-ramaswamy/RunnerIO/internal/dto/ws"
 	interfaces "github.com/nihal-ramaswamy/RunnerIO/internal/interface"
 	"github.com/nihal-ramaswamy/RunnerIO/internal/utils"
@@ -20,7 +20,7 @@ import (
 // @Summary Persist Audit Data
 // @Description Join the websocket to continuously send points to the live lines queue.
 // @Tags Runner WS Group
-// @Message {object} dtoschema.RunnerLiveLinesSchemaRequest
+// @Message {object} mongo_schema.RunnerLiveLinesSchemaRequest
 // @Router /ws/putOnQueueGroup/ [ws]
 type PersistAuditDataGroupHandler struct {
 	amqpConfig                 *amqpconfig.AmqpConfig
@@ -56,7 +56,7 @@ func (h *PersistAuditDataGroupHandler) Handler() gin.HandlerFunc {
 			"Failed to upgrade connection", zap.Error(err))
 		defer ws.Close()
 
-		var requestData dtoschema.RunnerLiveLinesSchemaRequest
+		var requestData mongo_schema.RunnerLiveLinesSchemaRequest
 
 		userDataStr := c.GetHeader("userData")
 		var userData dto.UserData
