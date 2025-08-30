@@ -1,6 +1,6 @@
 services:
   go_runner_service:
-    container_name: go_runner_service
+    container_name: go_runner_service${TEST_CONTAINER_PREFIX:-prod}
     image: golang
     build:
       dockerfile: service.Dockerfile
@@ -13,7 +13,7 @@ services:
     environment:
       SERVER: service
   go_runner_engine:
-    container_name: go_runner_engine
+    container_name: go_runner_engine${TEST_CONTAINER_PREFIX:-prod}
     image: golang
     build:
       dockerfile: engine.Dockerfile
@@ -27,7 +27,7 @@ services:
       SERVER: engine
   mongodb:
     image: mongo:latest
-    container_name: mongodb
+    container_name: mongodb${TEST_CONTAINER_PREFIX:-prod}
     restart: always
     ports:
       - "27017:27017"
@@ -37,7 +37,7 @@ services:
       - mongodb_data:/data/db
   mongo_express:
     image: mongo-express:latest
-    container_name: mongo-express
+    container_name: mongo_express${TEST_CONTAINER_PREFIX:-prod}
     restart: always
     ports:
       - "8081:8081"
@@ -46,12 +46,12 @@ services:
     depends_on:
       - mongodb
   runner_redis:
-    container_name: runner_redis
+    container_name: runner_redis${TEST_CONTAINER_PREFIX:-prod}
     image: redis:alpine
     ports:
       - "6379:6379"
   amqp:
-    container_name: rabbitmq_runner
+    container_name: rabbitmq_runner${TEST_CONTAINER_PREFIX:-prod}
     image: rabbitmq:4.1.1-management
     ports:
       - "5672:5672"
